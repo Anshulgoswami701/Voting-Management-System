@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 import {
   Plus,
@@ -526,10 +527,13 @@ function Elections() {
             <Vote size={24} />
           </div>
 
+        
+
           <div>
             <h1 className="text-lg font-bold text-slate-900">
               Elections
             </h1>
+           
 
             <p className="text-xs text-slate-500">
               Manage your elections
@@ -554,7 +558,17 @@ function Elections() {
 
       <main className="p-5 lg:p-8">
 
-        {/* TITLE */}
+        {/* BACK NAVIGATION */}
+        <div className="mb-5">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+          >
+            <ArrowLeft size={18} />
+            <span>Back</span>
+          </button>
+        </div>
 
         <div className="mb-7">
 
