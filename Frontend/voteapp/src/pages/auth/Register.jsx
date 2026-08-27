@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -17,6 +18,8 @@ import {
 } from "lucide-react";
 
 function Register() {
+  const navigate = useNavigate();
+
   const [role, setRole] = useState("voter");
 
   const [showPassword, setShowPassword] = useState(false);
@@ -31,6 +34,9 @@ function Register() {
     adminCode: "",
   });
 
+  // ==========================
+  // HANDLE INPUT CHANGE
+  // ==========================
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -39,7 +45,20 @@ function Register() {
   };
 
   // ==========================
-  // REGISTER USER
+  // HANDLE ROLE CHANGE
+  // ==========================
+  const handleRoleChange = (selectedRole) => {
+    setRole(selectedRole);
+
+    setFormData((prev) => ({
+      ...prev,
+      voterId: "",
+      adminCode: "",
+    }));
+  };
+
+  // ==========================
+  // REGISTER
   // ==========================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,17 +69,33 @@ function Register() {
       return;
     }
 
+    // ==========================
+    // BUILD REQUEST DATA
+    // ==========================
     const registerData = {
       fullName: formData.fullName,
-      voterId: role === "voter" ? formData.voterId : undefined,
       email: formData.email,
       password: formData.password,
       confirmPassword: formData.confirmPassword,
-      adminCode: role === "admin" ? formData.adminCode : undefined,
       role: role,
     };
 
+    // Voter ID only for voter
+    if (role === "voter") {
+      registerData.voterId = formData.voterId;
+    }
+
+    // Admin code only for admin
+    if (role === "admin") {
+      registerData.adminCode = formData.adminCode;
+    }
+
+    console.log("Register Data:", registerData);
+
     try {
+      // ==========================
+      // API REQUEST
+      // ==========================
       const response = await fetch(
         "http://localhost:5000/api/auth/register",
         {
@@ -76,32 +111,54 @@ function Register() {
 
       const data = await response.json();
 
-      // Backend error
+      console.log("Register Response:", data);
+
+      // ==========================
+      // BACKEND ERROR
+      // ==========================
       if (!response.ok) {
-        toast.error(data.message || "Registration failed");
+        toast.error(
+          data.message || "Registration failed"
+        );
+
         return;
       }
 
-      // Success
-      toast.success("Registration successful!");
+      // ==========================
+      // SUCCESS
+      // ==========================
 
-      console.log("Registered User:", data.user);
+      const accountType =
+        data.user.role === "admin"
+          ? "Admin"
+          : "Voter";
 
-      // Clear form
-      setFormData({
-        fullName: "",
-        voterId: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        adminCode: "",
-      });
+      toast.success(
+        `${accountType} registration successful!`
+      );
 
-      setRole("voter");
+      console.log(
+        "Registered User:",
+        data.user
+      );
+
+      // ==========================
+      // REDIRECT TO LOGIN
+      // ==========================
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error(
+        "Registration error:",
+        error
+      );
 
-      toast.error("Unable to connect to server");
+      toast.error(
+        "Unable to connect to server. Please try again."
+      );
     }
   };
 
@@ -110,6 +167,7 @@ function Register() {
       {/* ==========================
           TOAST CONTAINER
       ========================== */}
+
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -122,14 +180,15 @@ function Register() {
       />
 
       <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-8">
+
         <div className="w-full max-w-6xl grid lg:grid-cols-2 bg-white rounded-3xl overflow-hidden shadow-2xl">
 
           {/* ==========================
               LEFT SIDE
           ========================== */}
+
           <div className="hidden lg:flex relative bg-indigo-600 p-12 text-white flex-col justify-between overflow-hidden">
 
-            {/* Background shapes */}
             <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500 rounded-full opacity-50" />
 
             <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-700 rounded-full opacity-60" />
@@ -137,17 +196,24 @@ function Register() {
             <div className="relative z-10">
 
               {/* LOGO */}
+
               <div className="flex items-center gap-3 mb-10">
+
                 <div className="bg-white/15 p-3 rounded-xl backdrop-blur-sm">
                   <Vote size={28} />
                 </div>
 
                 <span className="text-2xl font-bold">
-                  Vote<span className="text-indigo-200">Manage</span>
+                  Vote
+                  <span className="text-indigo-200">
+                    Manage
+                  </span>
                 </span>
+
               </div>
 
               {/* HEADING */}
+
               <h1 className="text-4xl font-bold leading-tight mb-6">
                 Your Voice.
                 <br />
@@ -157,21 +223,27 @@ function Register() {
               </h1>
 
               <p className="text-indigo-100 text-lg leading-relaxed max-w-md">
-                Create your account and participate in a secure,
-                transparent and modern voting experience.
+                Create your account and participate
+                in a secure, transparent and modern
+                voting experience.
               </p>
+
             </div>
 
             {/* FEATURES */}
+
             <div className="relative z-10 space-y-5">
 
               {/* FEATURE 1 */}
+
               <div className="flex items-center gap-4">
+
                 <div className="bg-white/15 p-3 rounded-xl">
                   <ShieldCheck size={22} />
                 </div>
 
                 <div>
+
                   <p className="font-semibold">
                     Secure Registration
                   </p>
@@ -179,16 +251,21 @@ function Register() {
                   <p className="text-sm text-indigo-200">
                     Your information stays protected.
                   </p>
+
                 </div>
+
               </div>
 
               {/* FEATURE 2 */}
+
               <div className="flex items-center gap-4">
+
                 <div className="bg-white/15 p-3 rounded-xl">
                   <Vote size={22} />
                 </div>
 
                 <div>
+
                   <p className="font-semibold">
                     Fair Voting
                   </p>
@@ -196,21 +273,27 @@ function Register() {
                   <p className="text-sm text-indigo-200">
                     Every eligible voter gets a voice.
                   </p>
+
                 </div>
+
               </div>
 
             </div>
+
           </div>
 
           {/* ==========================
               RIGHT SIDE
           ========================== */}
+
           <div className="p-6 sm:p-10 lg:p-12">
 
             <div className="max-w-md mx-auto">
 
               {/* MOBILE LOGO */}
+
               <div className="flex lg:hidden items-center justify-center gap-2 mb-8">
+
                 <div className="bg-indigo-600 text-white p-2.5 rounded-xl">
                   <Vote size={24} />
                 </div>
@@ -218,10 +301,13 @@ function Register() {
                 <span className="text-xl font-bold text-slate-900">
                   VoteManage
                 </span>
+
               </div>
 
               {/* HEADING */}
+
               <div className="mb-7">
+
                 <h2 className="text-3xl font-bold text-slate-900">
                   Create Account
                 </h2>
@@ -229,11 +315,13 @@ function Register() {
                 <p className="text-slate-500 mt-2">
                   Choose your account type to continue.
                 </p>
+
               </div>
 
               {/* ==========================
                   ROLE SELECTOR
               ========================== */}
+
               <div className="mb-6">
 
                 <label className="block text-sm font-medium text-slate-700 mb-3">
@@ -243,57 +331,72 @@ function Register() {
                 <div className="grid grid-cols-2 gap-3">
 
                   {/* VOTER */}
+
                   <button
                     type="button"
-                    onClick={() => setRole("voter")}
+                    onClick={() =>
+                      handleRoleChange("voter")
+                    }
                     className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition ${
                       role === "voter"
                         ? "border-indigo-600 bg-indigo-50 text-indigo-600"
                         : "border-slate-200 text-slate-500 hover:border-indigo-300"
                     }`}
                   >
+
                     <User size={19} />
 
                     <span className="font-semibold">
                       Voter
                     </span>
+
                   </button>
 
                   {/* ADMIN */}
+
                   <button
                     type="button"
-                    onClick={() => setRole("admin")}
+                    onClick={() =>
+                      handleRoleChange("admin")
+                    }
                     className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition ${
                       role === "admin"
                         ? "border-indigo-600 bg-indigo-50 text-indigo-600"
                         : "border-slate-200 text-slate-500 hover:border-indigo-300"
                     }`}
                   >
+
                     <Shield size={19} />
 
                     <span className="font-semibold">
                       Admin
                     </span>
+
                   </button>
 
                 </div>
+
               </div>
 
               {/* ==========================
                   FORM
               ========================== */}
+
               <form
                 onSubmit={handleSubmit}
                 className="space-y-5"
               >
 
                 {/* FULL NAME */}
+
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Full Name
                   </label>
 
                   <div className="relative">
+
                     <User
                       size={19}
                       className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -308,17 +411,25 @@ function Register() {
                       required
                       className="w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                     />
+
                   </div>
+
                 </div>
 
-                {/* VOTER ID */}
+                {/* ==========================
+                    VOTER ID
+                    ONLY FOR VOTER
+                ========================== */}
+
                 {role === "voter" && (
                   <div>
+
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Voter ID
                     </label>
 
                     <div className="relative">
+
                       <CreditCard
                         size={19}
                         className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -333,18 +444,26 @@ function Register() {
                         required
                         className="w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                       />
+
                     </div>
+
                   </div>
                 )}
 
-                {/* ADMIN CODE */}
+                {/* ==========================
+                    ADMIN SECRET CODE
+                    ONLY FOR ADMIN
+                ========================== */}
+
                 {role === "admin" && (
                   <div>
+
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Admin Secret Code
                     </label>
 
                     <div className="relative">
+
                       <KeyRound
                         size={19}
                         className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -359,21 +478,26 @@ function Register() {
                         required
                         className="w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                       />
+
                     </div>
 
                     <p className="text-xs text-slate-400 mt-2">
                       Admin registration requires authorization.
                     </p>
+
                   </div>
                 )}
 
                 {/* EMAIL */}
+
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Email Address
                   </label>
 
                   <div className="relative">
+
                     <Mail
                       size={19}
                       className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -388,23 +512,32 @@ function Register() {
                       required
                       className="w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                     />
+
                   </div>
+
                 </div>
 
                 {/* PASSWORD */}
+
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Password
                   </label>
 
                   <div className="relative">
+
                     <Lock
                       size={19}
                       className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                     />
 
                     <input
-                      type={showPassword ? "text" : "password"}
+                      type={
+                        showPassword
+                          ? "text"
+                          : "password"
+                      }
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
@@ -420,22 +553,29 @@ function Register() {
                       }
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
+
                       {showPassword ? (
                         <EyeOff size={19} />
                       ) : (
                         <Eye size={19} />
                       )}
+
                     </button>
+
                   </div>
+
                 </div>
 
                 {/* CONFIRM PASSWORD */}
+
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Confirm Password
                   </label>
 
                   <div className="relative">
+
                     <Lock
                       size={19}
                       className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -464,17 +604,23 @@ function Register() {
                       }
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
+
                       {showConfirmPassword ? (
                         <EyeOff size={19} />
                       ) : (
                         <Eye size={19} />
                       )}
+
                     </button>
+
                   </div>
+
                 </div>
 
                 {/* TERMS */}
+
                 <div className="flex items-start gap-3">
+
                   <input
                     type="checkbox"
                     required
@@ -488,9 +634,11 @@ function Register() {
                     </span>{" "}
                     and Privacy Policy.
                   </p>
+
                 </div>
 
                 {/* SUBMIT */}
+
                 <button
                   type="submit"
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition duration-200 shadow-lg shadow-indigo-200"
@@ -505,7 +653,9 @@ function Register() {
               </form>
 
               {/* LOGIN */}
+
               <p className="text-center text-sm text-slate-500 mt-7">
+
                 Already have an account?{" "}
 
                 <Link
@@ -514,18 +664,25 @@ function Register() {
                 >
                   Login
                 </Link>
+
               </p>
 
               {/* SECURITY */}
+
               <div className="flex items-center justify-center gap-2 mt-8 text-xs text-slate-400">
+
                 <ShieldCheck size={15} />
+
                 Secure & trusted voting platform
+
               </div>
 
             </div>
+
           </div>
 
         </div>
+
       </div>
     </>
   );
