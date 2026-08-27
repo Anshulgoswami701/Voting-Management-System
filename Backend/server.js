@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const electionRoutes = require("./routes/electionRoutes");
 
 const connectDB = require("./config/db");
 
@@ -15,7 +16,7 @@ app.use(express.json());
 
 // Auth routes
 app.use("/api/auth", require("./routes/authRoutes"));
-
+app.use("/api/elections", electionRoutes);
 app.get("/", (req, res) => {
   res.json({
     message: "Voting Management System API is running",
