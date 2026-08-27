@@ -3,6 +3,9 @@ const express = require("express");
 const {
   createElection,
   getElections,
+  getElectionById,
+  updateElection,
+   deleteElection
 } = require("../controllers/electionController");
 
 const authMiddleware = require("../middleware/authMiddleware");
@@ -34,4 +37,33 @@ router.get(
   getElections
 );
 
+// ==========================================
+// GET SINGLE ELECTION
+// ADMIN ONLY
+// ==========================================
+
+router.get(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  getElectionById
+);
+
+// ==========================================
+// UPDATE ELECTION
+// ADMIN ONLY
+// ==========================================
+
+router.put(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  updateElection
+);
+router.delete(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  deleteElection
+);
 module.exports = router;

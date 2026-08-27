@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   Plus,
@@ -16,19 +17,22 @@ import { toast } from "react-toastify";
 
 function Elections() {
   // ==========================================
+  // NAVIGATION
+  // ==========================================
+
+  const navigate = useNavigate();
+
+  // ==========================================
   // STATES
   // ==========================================
 
   const [elections, setElections] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [creating, setCreating] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
 
   const [search, setSearch] = useState("");
-
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [formData, setFormData] = useState({
@@ -38,17 +42,28 @@ function Elections() {
     endDate: "",
   });
 
+  // DELETE MODAL
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    election: null,
+  });
+
+  const [deleting, setDeleting] = useState(false);
+
   // ==========================================
   // CURRENT DATE
   // ==========================================
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date()
+    .toISOString()
+    .split("T")[0];
 
   // ==========================================
   // API URL
   // ==========================================
 
-  const API_URL = "http://localhost:5000/api/elections";
+  const API_URL =
+    "http://localhost:5000/api/elections";
 
   // ==========================================
   // GET ELECTIONS
@@ -62,6 +77,7 @@ function Elections() {
 
       if (!token) {
         toast.error("Please login as admin");
+        navigate("/login");
         return;
       }
 
@@ -76,15 +92,24 @@ function Elections() {
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.message || "Failed to fetch elections");
+        toast.error(
+          data.message ||
+            "Failed to fetch elections"
+        );
+
         return;
       }
 
       setElections(data.elections || []);
     } catch (error) {
-      console.error("Fetch elections error:", error);
+      console.error(
+        "Fetch elections error:",
+        error
+      );
 
-      toast.error("Unable to connect to server");
+      toast.error(
+        "Unable to connect to server"
+      );
     } finally {
       setLoading(false);
     }
@@ -127,7 +152,7 @@ function Elections() {
   };
 
   // ==========================================
-  // CLOSE MODAL
+  // CLOSE CREATE MODAL
   // ==========================================
 
   const closeModal = () => {
@@ -155,8 +180,8 @@ function Elections() {
     // ------------------------------------------
 
     if (
-      !formData.title ||
-      !formData.description ||
+      !formData.title.trim() ||
+      !formData.description.trim() ||
       !formData.startDate ||
       !formData.endDate
     ) {
@@ -165,20 +190,29 @@ function Elections() {
     }
 
     // ------------------------------------------
-    // START DATE VALIDATION
+    // START DATE
     // ------------------------------------------
 
     if (formData.startDate < today) {
-      toast.error("Start date cannot be in the past");
+      toast.error(
+        "Start date cannot be in the past"
+      );
+
       return;
     }
 
     // ------------------------------------------
-    // END DATE VALIDATION
+    // END DATE
     // ------------------------------------------
 
-    if (formData.endDate <= formData.startDate) {
-      toast.error("End date must be after start date");
+    if (
+      formData.endDate <=
+      formData.startDate
+    ) {
+      toast.error(
+        "End date must be after start date"
+      );
+
       return;
     }
 
@@ -189,7 +223,12 @@ function Elections() {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      toast.error("Please login as admin first");
+      toast.error(
+        "Please login as admin first"
+      );
+
+      navigate("/login");
+
       return;
     }
 
@@ -205,14 +244,14 @@ function Elections() {
 
         headers: {
           "Content-Type": "application/json",
-
           Authorization: `Bearer ${token}`,
         },
 
         body: JSON.stringify({
           title: formData.title.trim(),
 
-          description: formData.description.trim(),
+          description:
+            formData.description.trim(),
 
           startDate: formData.startDate,
 
@@ -227,7 +266,10 @@ function Elections() {
       // ----------------------------------------
 
       if (!response.ok) {
-        toast.error(data.message || "Failed to create election");
+        toast.error(
+          data.message ||
+            "Failed to create election"
+        );
 
         return;
       }
@@ -236,12 +278,12 @@ function Elections() {
       // SUCCESS
       // ----------------------------------------
 
-      toast.success("Election created successfully!");
+      toast.success(
+        "Election created successfully!"
+      );
 
-      // Close modal
       setShowModal(false);
 
-      // Reset form
       setFormData({
         title: "",
         description: "",
@@ -249,52 +291,176 @@ function Elections() {
         endDate: "",
       });
 
-      // Refresh election list
       fetchElections();
     } catch (error) {
-      console.error("Create election error:", error);
+      console.error(
+        "Create election error:",
+        error
+      );
 
-      toast.error("Unable to connect to server");
+      toast.error(
+        "Unable to connect to server"
+      );
     } finally {
       setCreating(false);
     }
   };
 
   // ==========================================
-  // DELETE ELECTION
+  // VIEW ELECTION
   // ==========================================
 
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this election?"
-    );
+  const handleView = (id) => {
+    navigate(`/admin/elections/${id}`);
+  };
 
-    if (!confirmDelete) return;
+  // ==========================================
+  // EDIT ELECTION
+  // ==========================================
 
-    toast.info(
-      "Delete API will be connected in the next step."
-    );
+  const handleEdit = (id) => {
+    navigate(`/admin/elections/${id}/edit`);
+  };
+
+  // ==========================================
+  // OPEN DELETE MODAL
+  // ==========================================
+
+  const handleDelete = (election) => {
+    setDeleteModal({
+      open: true,
+      election: election,
+    });
+  };
+
+  // ==========================================
+  // CLOSE DELETE MODAL
+  // ==========================================
+
+  const closeDeleteModal = () => {
+    if (deleting) return;
+
+    setDeleteModal({
+      open: false,
+      election: null,
+    });
+  };
+
+  // ==========================================
+  // CONFIRM DELETE
+  // ==========================================
+
+  const confirmDelete = async () => {
+    const id = deleteModal.election?._id;
+
+    if (!id) {
+      toast.error("Election not found");
+      return;
+    }
+
+    try {
+      setDeleting(true);
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        toast.error(
+          "Please login as admin first"
+        );
+
+        navigate("/login");
+
+        return;
+      }
+
+      // ----------------------------------------
+      // DELETE API
+      // ----------------------------------------
+
+      const response = await fetch(
+        `${API_URL}/${id}`,
+        {
+          method: "DELETE",
+
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      // ----------------------------------------
+      // ERROR
+      // ----------------------------------------
+
+      if (!response.ok) {
+        toast.error(
+          data.message ||
+            "Failed to delete election"
+        );
+
+        return;
+      }
+
+      // ----------------------------------------
+      // SUCCESS
+      // ----------------------------------------
+
+      toast.success(
+        "Election deleted successfully!"
+      );
+
+      // Remove from UI immediately
+      setElections((prev) =>
+        prev.filter(
+          (election) =>
+            election._id !== id
+        )
+      );
+
+      // Close modal
+      setDeleteModal({
+        open: false,
+        election: null,
+      });
+    } catch (error) {
+      console.error(
+        "Delete election error:",
+        error
+      );
+
+      toast.error(
+        "Unable to connect to server"
+      );
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // ==========================================
   // FILTER ELECTIONS
   // ==========================================
 
-  const filteredElections = elections.filter((election) => {
-    const matchesSearch =
-      election.title
-        ?.toLowerCase()
-        .includes(search.toLowerCase()) ||
-      election.description
-        ?.toLowerCase()
-        .includes(search.toLowerCase());
+  const filteredElections =
+    elections.filter((election) => {
+      const matchesSearch =
+        election.title
+          ?.toLowerCase()
+          .includes(search.toLowerCase()) ||
+        election.description
+          ?.toLowerCase()
+          .includes(search.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      election.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" ||
+        election.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return (
+        matchesSearch &&
+        matchesStatus
+      );
+    });
 
   // ==========================================
   // FORMAT DATE
@@ -303,11 +469,14 @@ function Elections() {
   const formatDate = (date) => {
     if (!date) return "-";
 
-    return new Date(date).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    return new Date(date).toLocaleDateString(
+      "en-GB",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }
+    );
   };
 
   // ==========================================
@@ -344,12 +513,15 @@ function Elections() {
 
   return (
     <div className="min-h-screen bg-slate-100">
+
       {/* ======================================
           HEADER
       ====================================== */}
 
       <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6 lg:px-8">
+
         <div className="flex items-center gap-3">
+
           <div className="bg-indigo-100 text-indigo-600 p-2.5 rounded-xl">
             <Vote size={24} />
           </div>
@@ -363,6 +535,7 @@ function Elections() {
               Manage your elections
             </p>
           </div>
+
         </div>
 
         <button
@@ -370,9 +543,9 @@ function Elections() {
           className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-3 rounded-xl transition"
         >
           <Plus size={18} />
-
           Create Election
         </button>
+
       </header>
 
       {/* ======================================
@@ -380,9 +553,11 @@ function Elections() {
       ====================================== */}
 
       <main className="p-5 lg:p-8">
+
         {/* TITLE */}
 
         <div className="mb-7">
+
           <h2 className="text-3xl font-bold text-slate-900">
             Election Management
           </h2>
@@ -390,6 +565,7 @@ function Elections() {
           <p className="text-slate-500 mt-2">
             Create, manage and monitor your elections.
           </p>
+
         </div>
 
         {/* ====================================
@@ -397,10 +573,13 @@ function Elections() {
         ==================================== */}
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-5">
-          <div className="grid md:grid-cols-[1fr_120px] gap-3">
+
+          <div className="grid md:grid-cols-[1fr_140px] gap-3">
+
             {/* SEARCH */}
 
             <div className="relative">
+
               <Search
                 size={19}
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -409,10 +588,13 @@ function Elections() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
                 placeholder="Search elections..."
                 className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
               />
+
             </div>
 
             {/* STATUS */}
@@ -424,7 +606,9 @@ function Elections() {
               }
               className="px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="all">All Status</option>
+              <option value="all">
+                All Status
+              </option>
 
               <option value="upcoming">
                 Upcoming
@@ -438,7 +622,9 @@ function Elections() {
                 Ended
               </option>
             </select>
+
           </div>
+
         </div>
 
         {/* ====================================
@@ -446,9 +632,11 @@ function Elections() {
         ==================================== */}
 
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+
           {/* TABLE HEADER */}
 
           <div className="p-5 border-b border-slate-200">
+
             <h3 className="font-semibold text-slate-900">
               All Elections
             </h3>
@@ -460,32 +648,39 @@ function Elections() {
                 : ""}{" "}
               found
             </p>
+
           </div>
 
+          {/* LOADING */}
+
           {loading ? (
-            // ==================================
-            // LOADING
-            // ==================================
 
             <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+
               <Loader2
                 size={32}
                 className="animate-spin mb-3"
               />
 
-              <p>Loading elections...</p>
+              <p>
+                Loading elections...
+              </p>
+
             </div>
+
           ) : filteredElections.length === 0 ? (
-            // ==================================
-            // EMPTY
-            // ==================================
+
+            /* EMPTY */
 
             <div className="py-20 flex flex-col items-center justify-center text-center">
+
               <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+
                 <Vote
                   size={22}
                   className="text-slate-400"
                 />
+
               </div>
 
               <h3 className="font-semibold text-slate-700">
@@ -502,19 +697,23 @@ function Elections() {
                 className="mt-5 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-3 rounded-xl transition"
               >
                 <Plus size={18} />
-
                 Create Election
               </button>
+
             </div>
+
           ) : (
-            // ==================================
-            // TABLE
-            // ==================================
+
+            /* TABLE */
 
             <div className="overflow-x-auto">
+
               <table className="w-full">
+
                 <thead>
+
                   <tr className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+
                     <th className="px-5 py-4">
                       Election
                     </th>
@@ -534,19 +733,25 @@ function Elections() {
                     <th className="px-5 py-4 text-right">
                       Actions
                     </th>
+
                   </tr>
+
                 </thead>
 
                 <tbody>
+
                   {filteredElections.map(
                     (election) => (
+
                       <tr
                         key={election._id}
                         className="border-t border-slate-100 hover:bg-slate-50"
                       >
+
                         {/* ELECTION */}
 
                         <td className="px-5 py-5">
+
                           <p className="font-semibold text-slate-800">
                             {election.title}
                           </p>
@@ -554,79 +759,116 @@ function Elections() {
                           <p className="text-sm text-slate-500 mt-1">
                             {election.description}
                           </p>
+
                         </td>
 
                         {/* START */}
 
                         <td className="px-5 py-5">
+
                           <div className="flex items-center gap-2 text-slate-600">
+
                             <Calendar size={16} />
 
                             {formatDate(
                               election.startDate
                             )}
+
                           </div>
+
                         </td>
 
                         {/* END */}
 
                         <td className="px-5 py-5">
+
                           <div className="flex items-center gap-2 text-slate-600">
+
                             <Calendar size={16} />
 
                             {formatDate(
                               election.endDate
                             )}
+
                           </div>
+
                         </td>
 
                         {/* STATUS */}
 
                         <td className="px-5 py-5">
+
                           {getStatusBadge(
                             election.status
                           )}
+
                         </td>
 
                         {/* ACTIONS */}
 
                         <td className="px-5 py-5">
+
                           <div className="flex items-center justify-end gap-3">
+
+                            {/* VIEW */}
+
                             <button
                               title="View"
-                              className="text-slate-500 hover:text-indigo-600"
+                              onClick={() =>
+                                handleView(
+                                  election._id
+                                )
+                              }
+                              className="text-slate-500 hover:text-indigo-600 transition"
                             >
                               <Eye size={18} />
                             </button>
 
+                            {/* EDIT */}
+
                             <button
                               title="Edit"
-                              className="text-slate-500 hover:text-indigo-600"
+                              onClick={() =>
+                                handleEdit(
+                                  election._id
+                                )
+                              }
+                              className="text-slate-500 hover:text-indigo-600 transition"
                             >
                               <Pencil size={18} />
                             </button>
+
+                            {/* DELETE */}
 
                             <button
                               title="Delete"
                               onClick={() =>
                                 handleDelete(
-                                  election._id
+                                  election
                                 )
                               }
-                              className="text-slate-500 hover:text-red-600"
+                              className="text-slate-500 hover:text-red-600 transition"
                             >
                               <Trash2 size={18} />
                             </button>
+
                           </div>
+
                         </td>
+
                       </tr>
                     )
                   )}
+
                 </tbody>
+
               </table>
+
             </div>
           )}
+
         </div>
+
       </main>
 
       {/* ======================================
@@ -634,12 +876,17 @@ function Elections() {
       ====================================== */}
 
       {showModal && (
+
         <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center px-4">
+
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+
             {/* MODAL HEADER */}
 
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+
               <div>
+
                 <h2 className="text-xl font-bold text-slate-900">
                   Create New Election
                 </h2>
@@ -647,6 +894,7 @@ function Elections() {
                 <p className="text-sm text-slate-500 mt-1">
                   Add details for your election.
                 </p>
+
               </div>
 
               <button
@@ -656,6 +904,7 @@ function Elections() {
               >
                 <X size={20} />
               </button>
+
             </div>
 
             {/* MODAL FORM */}
@@ -664,9 +913,11 @@ function Elections() {
               onSubmit={handleSubmit}
               className="p-6 space-y-5"
             >
+
               {/* TITLE */}
 
               <div>
+
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Election Title
                 </label>
@@ -680,11 +931,13 @@ function Elections() {
                   required
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+
               </div>
 
               {/* DESCRIPTION */}
 
               <div>
+
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Description
                 </label>
@@ -698,14 +951,17 @@ function Elections() {
                   required
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none resize-none focus:ring-2 focus:ring-indigo-500"
                 />
+
               </div>
 
               {/* DATES */}
 
               <div className="grid grid-cols-2 gap-4">
+
                 {/* START DATE */}
 
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Start Date
                   </label>
@@ -719,11 +975,13 @@ function Elections() {
                     required
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
                   />
+
                 </div>
 
                 {/* END DATE */}
 
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     End Date
                   </label>
@@ -733,18 +991,22 @@ function Elections() {
                     name="endDate"
                     value={formData.endDate}
                     min={
-                      formData.startDate || today
+                      formData.startDate ||
+                      today
                     }
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
                   />
+
                 </div>
+
               </div>
 
               {/* BUTTONS */}
 
               <div className="flex justify-end gap-3 pt-2">
+
                 <button
                   type="button"
                   onClick={closeModal}
@@ -759,6 +1021,7 @@ function Elections() {
                   disabled={creating}
                   className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-3 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
                 >
+
                   {creating ? (
                     <>
                       <Loader2
@@ -775,12 +1038,128 @@ function Elections() {
                       Create Election
                     </>
                   )}
+
                 </button>
+
               </div>
+
             </form>
+
           </div>
+
         </div>
       )}
+
+      {/* ======================================
+          DELETE CONFIRMATION MODAL
+      ====================================== */}
+
+      {deleteModal.open && (
+
+        <div
+          className="fixed inset-0 z[60] bg-slate-950/60 flex items-center justify-center px-4"
+          onClick={closeDeleteModal}
+        >
+
+          <div
+            className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+
+            <div className="p-7">
+
+              {/* DELETE ICON */}
+
+              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5">
+                <Trash2 size={25} />
+              </div>
+
+              {/* HEADING */}
+
+              <div className="text-center">
+
+                <h2 className="text-xl font-bold text-slate-900">
+                  Delete Election?
+                </h2>
+
+                <p className="text-slate-500 text-sm mt-2">
+                  Are you sure you want to delete this election?
+                </p>
+
+              </div>
+
+              {/* ELECTION NAME */}
+
+              <div className="mt-5 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+
+                <p className="text-xs text-slate-400 uppercase font-semibold">
+                  Election
+                </p>
+
+                <p className="font-semibold text-slate-800 mt-1">
+                  {deleteModal.election?.title}
+                </p>
+
+              </div>
+
+              {/* WARNING */}
+
+              <p className="text-xs text-red-500 text-center mt-4">
+                This action cannot be undone.
+              </p>
+
+              {/* BUTTONS */}
+
+              <div className="flex justify-end gap-3 mt-7">
+
+                {/* CANCEL */}
+
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={closeDeleteModal}
+                  className="px-5 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                {/* DELETE */}
+
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={confirmDelete}
+                  className="flex items-center justify-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+
+                  {deleting ? (
+                    <>
+                      <Loader2
+                        size={18}
+                        className="animate-spin"
+                      />
+
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={18} />
+
+                      Delete Election
+                    </>
+                  )}
+
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 }
