@@ -53,14 +53,12 @@ const register = async (req, res) => {
     // ==========================================
 
     if (role === "voter") {
-      // Voter ID required
       if (!voterId) {
         return res.status(400).json({
           message: "Voter ID is required",
         });
       }
 
-      // Check duplicate voter ID
       const existingVoter = await User.findOne({
         voterId,
       });
@@ -77,34 +75,27 @@ const register = async (req, res) => {
     // ==========================================
 
     if (role === "admin") {
-      // Admin code required
       if (!adminCode) {
         return res.status(400).json({
           message: "Admin secret code is required",
         });
       }
 
-      // Check admin secret code
       if (adminCode !== process.env.ADMIN_SECRET_CODE) {
         return res.status(403).json({
           message: "Invalid admin secret code",
         });
       }
 
-      // ==========================================
-      // ONLY ONE ADMIN ALLOWED
-      // ==========================================
+      // const existingAdmin = await User.findOne({
+      //   role: "admin",
+      // });
 
-      const existingAdmin = await User.findOne({
-        role: "admin",
-      });
-
-      if (existingAdmin) {
-        return res.status(409).json({
-          message:
-            "Admin already exists. Only one admin is allowed.",
-        });
-      }
+      // if (existingAdmin) {
+      //   return res.status(409).json({
+      //     message: "Admin already exists. Only one admin is allowed.",
+      //   });
+      // }
     }
 
     // ==========================================
@@ -125,10 +116,7 @@ const register = async (req, res) => {
     // HASH PASSWORD
     // ==========================================
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      10
-    );
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // ==========================================
     // CREATE USER
@@ -136,16 +124,9 @@ const register = async (req, res) => {
 
     const user = await User.create({
       fullName,
-
-      voterId:
-        role === "voter"
-          ? voterId
-          : undefined,
-
+      voterId: role === "voter" ? voterId : undefined,
       email,
-
       password: hashedPassword,
-
       role,
     });
 
@@ -155,7 +136,6 @@ const register = async (req, res) => {
 
     return res.status(201).json({
       message: "Registration successful",
-
       user: {
         id: user._id,
         fullName: user.fullName,
@@ -164,16 +144,11 @@ const register = async (req, res) => {
         role: user.role,
       },
     });
-
   } catch (error) {
-    console.error(
-      "Registration error:",
-      error
-    );
+    console.error("Registration error:", error);
 
     return res.status(500).json({
-      message:
-        "Server error during registration",
+      message: "Server error during registration",
     });
   }
 };
@@ -184,11 +159,7 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const {
-      email,
-      password,
-      role,
-    } = req.body;
+    const { email, password, role } = req.body;
 
     // ==========================================
     // 1. REQUIRED FIELDS
@@ -196,8 +167,7 @@ const login = async (req, res) => {
 
     if (!email || !password || !role) {
       return res.status(400).json({
-        message:
-          "Email, password and role are required",
+        message: "Email, password and role are required",
       });
     }
 
@@ -215,14 +185,11 @@ const login = async (req, res) => {
     // 3. FIND USER BY EMAIL
     // ==========================================
 
-    const user = await User.findOne({
-      email,
-    });
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(401).json({
-        message:
-          "Invalid email or password",
+        message: "Invalid email or password",
       });
     }
 
@@ -232,8 +199,7 @@ const login = async (req, res) => {
 
     if (user.role !== role) {
       return res.status(403).json({
-        message:
-          `This account is registered as ${user.role}`,
+        message: `This account is registered as ${user.role}`,
       });
     }
 
@@ -241,16 +207,11 @@ const login = async (req, res) => {
     // 5. CHECK PASSWORD
     // ==========================================
 
-    const isPasswordCorrect =
-      await bcrypt.compare(
-        password,
-        user.password
-      );
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
-        message:
-          "Invalid email or password",
+        message: "Invalid email or password",
       });
     }
 
@@ -259,16 +220,9 @@ const login = async (req, res) => {
     // ==========================================
 
     const token = jwt.sign(
-      {
-        userId: user._id,
-        role: user.role,
-      },
-
+      { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
-
-      {
-        expiresIn: "1d",
-      }
+      { expiresIn: "1d" }
     );
 
     // ==========================================
@@ -277,9 +231,7 @@ const login = async (req, res) => {
 
     return res.status(200).json({
       message: "Login successful",
-
       token,
-
       user: {
         id: user._id,
         fullName: user.fullName,
@@ -289,16 +241,11 @@ const login = async (req, res) => {
         hasVoted: user.hasVoted,
       },
     });
-
   } catch (error) {
-    console.error(
-      "Login error:",
-      error
-    );
+    console.error("Login error:", error);
 
     return res.status(500).json({
-      message:
-        "Server error during login",
+      message: "Server error during login",
     });
   }
 };
