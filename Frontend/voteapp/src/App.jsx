@@ -13,6 +13,7 @@ import AdminDashboard from "./admin/AdminDashboard";
 import Elections from "./admin/Elections";
 import ElectionDetails from "./admin/ElectionDetails";
 import EditElection from "./admin/EditElection";
+import Candidates from "./admin/Candidates";
 
 function App() {
   return (
@@ -22,7 +23,6 @@ function App() {
         {/* ==============================
             DEFAULT
         ============================== */}
-
         <Route
           path="/"
           element={
@@ -36,7 +36,6 @@ function App() {
         {/* ==============================
             AUTH
         ============================== */}
-
         <Route
           path="/login"
           element={<Login />}
@@ -55,7 +54,6 @@ function App() {
         {/* ==============================
             ADMIN DASHBOARD
         ============================== */}
-
         <Route
           path="/admin/dashboard"
           element={<AdminDashboard />}
@@ -64,7 +62,6 @@ function App() {
         {/* ==============================
             ADMIN ELECTIONS
         ============================== */}
-
         <Route
           path="/admin/elections"
           element={<Elections />}
@@ -73,7 +70,6 @@ function App() {
         {/* ==============================
             ELECTION DETAILS
         ============================== */}
-
         <Route
           path="/admin/elections/:id"
           element={<ElectionDetails />}
@@ -82,10 +78,17 @@ function App() {
         {/* ==============================
             EDIT ELECTION
         ============================== */}
-
         <Route
           path="/admin/elections/:id/edit"
           element={<EditElection />}
+        />
+
+        {/* ==============================
+            ADMIN CANDIDATES
+        ============================== */}
+        <Route
+          path="/admin/candidates"
+          element={<Candidates />}
         />
 
       </Routes>

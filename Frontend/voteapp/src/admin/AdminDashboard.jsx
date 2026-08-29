@@ -4,32 +4,15 @@ import {
   Users,
   UserRound,
   BarChart3,
-  Settings,
   UserCircle,
+  Settings,
   LogOut,
-  Menu,
-  CalendarDays,
-  CheckCircle,
-  UserCheck,
-  ClipboardList,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 
 function AdminDashboard() {
   const navigate = useNavigate();
-
-  // ==========================================
-  // GET LOGGED-IN ADMIN
-  // ==========================================
-
-  const user = JSON.parse(
-    localStorage.getItem("user") || "null"
-  );
-
-  // ==========================================
-  // LOGOUT
-  // ==========================================
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -41,161 +24,124 @@ function AdminDashboard() {
   return (
     <div className="min-h-screen bg-slate-100 flex">
 
-      {/* =========================================
+      {/* ==============================
           SIDEBAR
-      ========================================= */}
+      ============================== */}
 
-      <aside className="w-64 bg-slate-900 text-white min-h-screen flex flex-col">
+      <aside className="w-64 bg-slate-900 text-white flex flex-col">
 
         {/* LOGO */}
 
-        <div className="h-20 flex items-center px-6 border-b border-slate-800">
+        <div className="px-6 py-5 border-b border-slate-800">
+          <h1 className="text-xl font-bold">
+            Voting System
+          </h1>
 
-          <div className="bg-indigo-600 p-2.5 rounded-xl mr-3">
-            <Vote size={25} />
-          </div>
-
-          <div>
-            <h1 className="text-lg font-bold">
-              Online Voting
-            </h1>
-
-            <p className="text-indigo-400 text-sm">
-              System
-            </p>
-          </div>
-
+          <p className="text-xs text-slate-400 mt-1">
+            Admin Panel
+          </p>
         </div>
 
+        {/* MENU */}
 
-        {/* NAVIGATION */}
-
-        <nav className="flex-1 px-4 py-6">
+        <nav className="flex-1 px-4 py-6 space-y-2">
 
           {/* DASHBOARD */}
 
           <button
             onClick={() => navigate("/admin/dashboard")}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-600 text-white"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
           >
             <LayoutDashboard size={20} />
 
-            <span className="font-medium">
+            <span>
               Dashboard
             </span>
           </button>
 
+          {/* ELECTIONS */}
 
-          {/* MANAGEMENT */}
+          <button
+            onClick={() => navigate("/admin/elections")}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
+          >
+            <Vote size={20} />
 
-          <div className="mt-8">
+            <span>
+              Elections
+            </span>
+          </button>
 
-            <p className="text-xs font-semibold text-slate-500 uppercase px-4 mb-3">
-              Management
-            </p>
+          {/* CANDIDATES */}
 
+          <button
+            onClick={() => navigate("/admin/candidates")}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
+          >
+            <UserRound size={20} />
 
-            {/* ELECTIONS */}
+            <span>
+              Candidates
+            </span>
+          </button>
 
-            <button
-              onClick={() => navigate("/admin/elections")}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
-            >
-              <Vote size={20} />
+          {/* VOTERS */}
 
-              <span>
-                Elections
-              </span>
-            </button>
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
+          >
+            <Users size={20} />
 
+            <span>
+              Voters
+            </span>
+          </button>
 
-            {/* CANDIDATES */}
+          {/* RESULTS */}
 
-            <button
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
-            >
-              <UserRound size={20} />
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
+          >
+            <BarChart3 size={20} />
 
-              <span>
-                Candidates
-              </span>
-            </button>
+            <span>
+              Results
+            </span>
+          </button>
 
+          {/* PROFILE */}
 
-            {/* VOTERS */}
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
+          >
+            <UserCircle size={20} />
 
-            <button
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
-            >
-              <Users size={20} />
+            <span>
+              Profile
+            </span>
+          </button>
 
-              <span>
-                Voters
-              </span>
-            </button>
+          {/* SETTINGS */}
 
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
+          >
+            <Settings size={20} />
 
-            {/* RESULTS */}
-
-            <button
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
-            >
-              <BarChart3 size={20} />
-
-              <span>
-                Results
-              </span>
-            </button>
-
-          </div>
-
-
-          {/* SYSTEM */}
-
-          <div className="mt-8">
-
-            <p className="text-xs font-semibold text-slate-500 uppercase px-4 mb-3">
-              System
-            </p>
-
-
-            {/* PROFILE */}
-
-            <button
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
-            >
-              <UserCircle size={20} />
-
-              <span>
-                Profile
-              </span>
-            </button>
-
-
-            {/* SETTINGS */}
-
-            <button
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
-            >
-              <Settings size={20} />
-
-              <span>
-                Settings
-              </span>
-            </button>
-
-          </div>
+            <span>
+              Settings
+            </span>
+          </button>
 
         </nav>
 
-
         {/* LOGOUT */}
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="px-4 py-5 border-t border-slate-800">
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-slate-800 transition"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition"
           >
             <LogOut size={20} />
 
@@ -208,256 +154,139 @@ function AdminDashboard() {
 
       </aside>
 
-
-      {/* =========================================
+      {/* ==============================
           MAIN CONTENT
-      ========================================= */}
+      ============================== */}
 
-      <main className="flex-1">
+      <main className="flex-1 p-8">
 
-        {/* HEADER */}
+        <div className="mb-8">
 
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8">
+          <h2 className="text-3xl font-bold text-slate-800">
+            Admin Dashboard
+          </h2>
 
-          <div className="flex items-center gap-3">
+          <p className="text-slate-500 mt-2">
+            Manage elections, candidates, voters and results.
+          </p>
 
-            <button className="text-slate-600">
-              <Menu size={24} />
-            </button>
+        </div>
 
-            <h2 className="text-xl font-semibold text-slate-800">
-              Admin Dashboard
-            </h2>
+        {/* DASHBOARD CARDS */}
 
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
+          {/* ELECTIONS */}
 
-          {/* ADMIN PROFILE */}
+          <div
+            onClick={() => navigate("/admin/elections")}
+            className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition"
+          >
+            <div className="flex items-center justify-between">
 
-          <div className="flex items-center gap-3">
+              <div>
+                <p className="text-sm text-slate-500">
+                  Elections
+                </p>
 
-            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-
-              <UserCircle
-                size={24}
-                className="text-indigo-600"
-              />
-
-            </div>
-
-            <div>
-
-              <p className="font-semibold text-slate-800">
-                {user?.fullName || "Admin User"}
-              </p>
-
-              <p className="text-xs text-slate-500">
-                Administrator
-              </p>
-
-            </div>
-
-          </div>
-
-        </header>
-
-
-        {/* =========================================
-            DASHBOARD CONTENT
-        ========================================= */}
-
-        <section className="p-8">
-
-          {/* PAGE TITLE */}
-
-          <div>
-
-            <h1 className="text-3xl font-bold text-slate-900">
-              Dashboard
-            </h1>
-
-            <p className="text-slate-500 mt-2">
-              Welcome back, {user?.fullName || "Admin User"} 👋
-            </p>
-
-          </div>
-
-
-          {/* =========================================
-              STATISTICS CARDS
-          ========================================= */}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mt-8">
-
-
-            {/* TOTAL ELECTIONS */}
-
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-
-              <div className="flex items-start justify-between">
-
-                <div>
-
-                  <p className="text-sm font-medium text-slate-500">
-                    Total Elections
-                  </p>
-
-                  <h2 className="text-3xl font-bold text-slate-900 mt-2">
-                    0
-                  </h2>
-
-                  <p className="text-xs text-slate-400 mt-2">
-                    All elections
-                  </p>
-
-                </div>
-
-                <div className="bg-indigo-100 text-indigo-600 p-3 rounded-xl">
-                  <CalendarDays size={23} />
-                </div>
-
+                <h3 className="text-3xl font-bold text-slate-800 mt-2">
+                  —
+                </h3>
               </div>
 
-            </div>
-
-
-            {/* ACTIVE ELECTIONS */}
-
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-
-              <div className="flex items-start justify-between">
-
-                <div>
-
-                  <p className="text-sm font-medium text-slate-500">
-                    Active Elections
-                  </p>
-
-                  <h2 className="text-3xl font-bold text-slate-900 mt-2">
-                    0
-                  </h2>
-
-                  <p className="text-xs text-slate-400 mt-2">
-                    Currently running
-                  </p>
-
-                </div>
-
-                <div className="bg-green-100 text-green-600 p-3 rounded-xl">
-                  <CheckCircle size={23} />
-                </div>
-
-              </div>
-
-            </div>
-
-
-            {/* TOTAL CANDIDATES */}
-
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-
-              <div className="flex items-start justify-between">
-
-                <div>
-
-                  <p className="text-sm font-medium text-slate-500">
-                    Total Candidates
-                  </p>
-
-                  <h2 className="text-3xl font-bold text-slate-900 mt-2">
-                    0
-                  </h2>
-
-                  <p className="text-xs text-slate-400 mt-2">
-                    Registered candidates
-                  </p>
-
-                </div>
-
-                <div className="bg-purple-100 text-purple-600 p-3 rounded-xl">
-                  <UserCheck size={23} />
-                </div>
-
-              </div>
-
-            </div>
-
-
-            {/* TOTAL VOTERS */}
-
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-
-              <div className="flex items-start justify-between">
-
-                <div>
-
-                  <p className="text-sm font-medium text-slate-500">
-                    Total Voters
-                  </p>
-
-                  <h2 className="text-3xl font-bold text-slate-900 mt-2">
-                    0
-                  </h2>
-
-                  <p className="text-xs text-slate-400 mt-2">
-                    Registered voters
-                  </p>
-
-                </div>
-
-                <div className="bg-orange-100 text-orange-600 p-3 rounded-xl">
-                  <ClipboardList size={23} />
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          {/* =========================================
-              RECENT ACTIVITY
-          ========================================= */}
-
-          <div className="mt-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
-
-            <div className="p-6 border-b border-slate-200">
-
-              <h2 className="text-lg font-semibold text-slate-800">
-                Recent Activity
-              </h2>
-
-              <p className="text-sm text-slate-500 mt-1">
-                Latest activity in the voting system
-              </p>
-
-            </div>
-
-            <div className="p-8 text-center">
-
-              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
-
-                <BarChart3
-                  size={22}
-                  className="text-slate-400"
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <Vote
+                  size={24}
+                  className="text-blue-600"
                 />
-
               </div>
 
-              <p className="text-slate-500 mt-3">
-                No recent activity
-              </p>
+            </div>
+          </div>
 
-              <p className="text-sm text-slate-400 mt-1">
-                Activity will appear here once the system is in use.
-              </p>
+          {/* CANDIDATES */}
+
+          <div
+            onClick={() => navigate("/admin/candidates")}
+            className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition"
+          >
+            <div className="flex items-center justify-between">
+
+              <div>
+                <p className="text-sm text-slate-500">
+                  Candidates
+                </p>
+
+                <h3 className="text-3xl font-bold text-slate-800 mt-2">
+                  —
+                </h3>
+              </div>
+
+              <div className="p-3 bg-green-100 rounded-xl">
+                <UserRound
+                  size={24}
+                  className="text-green-600"
+                />
+              </div>
+
+            </div>
+          </div>
+
+          {/* VOTERS */}
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+
+            <div className="flex items-center justify-between">
+
+              <div>
+                <p className="text-sm text-slate-500">
+                  Voters
+                </p>
+
+                <h3 className="text-3xl font-bold text-slate-800 mt-2">
+                  —
+                </h3>
+              </div>
+
+              <div className="p-3 bg-purple-100 rounded-xl">
+                <Users
+                  size={24}
+                  className="text-purple-600"
+                />
+              </div>
 
             </div>
 
           </div>
 
-        </section>
+          {/* RESULTS */}
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+
+            <div className="flex items-center justify-between">
+
+              <div>
+                <p className="text-sm text-slate-500">
+                  Results
+                </p>
+
+                <h3 className="text-3xl font-bold text-slate-800 mt-2">
+                  —
+                </h3>
+              </div>
+
+              <div className="p-3 bg-orange-100 rounded-xl">
+                <BarChart3
+                  size={24}
+                  className="text-orange-600"
+                />
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
 
       </main>
 
