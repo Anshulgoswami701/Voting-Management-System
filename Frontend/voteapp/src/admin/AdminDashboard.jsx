@@ -31,7 +31,6 @@ function AdminDashboard() {
       <aside className="w-64 bg-slate-900 text-white flex flex-col">
 
         {/* LOGO */}
-
         <div className="px-6 py-5 border-b border-slate-800">
           <h1 className="text-xl font-bold">
             Voting System
@@ -42,13 +41,13 @@ function AdminDashboard() {
           </p>
         </div>
 
-        {/* MENU */}
 
+        {/* MENU */}
         <nav className="flex-1 px-4 py-6 space-y-2">
 
           {/* DASHBOARD */}
-
           <button
+            type="button"
             onClick={() => navigate("/admin/dashboard")}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
           >
@@ -59,9 +58,10 @@ function AdminDashboard() {
             </span>
           </button>
 
-          {/* ELECTIONS */}
 
+          {/* ELECTIONS */}
           <button
+            type="button"
             onClick={() => navigate("/admin/elections")}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
           >
@@ -72,9 +72,10 @@ function AdminDashboard() {
             </span>
           </button>
 
-          {/* CANDIDATES */}
 
+          {/* CANDIDATES */}
           <button
+            type="button"
             onClick={() => navigate("/admin/candidates")}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
           >
@@ -85,9 +86,14 @@ function AdminDashboard() {
             </span>
           </button>
 
-          {/* VOTERS */}
+
+          {/* ==============================
+              VOTERS
+          ============================== */}
 
           <button
+            type="button"
+            onClick={() => navigate("/admin/voters")}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
           >
             <Users size={20} />
@@ -97,9 +103,14 @@ function AdminDashboard() {
             </span>
           </button>
 
-          {/* RESULTS */}
 
+          {/* RESULTS */}
           <button
+            type="button"
+            onClick={() => {
+              // Results page baad mein banayenge
+              console.log("Results clicked");
+            }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
           >
             <BarChart3 size={20} />
@@ -109,9 +120,13 @@ function AdminDashboard() {
             </span>
           </button>
 
-          {/* PROFILE */}
 
+          {/* PROFILE */}
           <button
+            type="button"
+            onClick={() => {
+              console.log("Profile clicked");
+            }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
           >
             <UserCircle size={20} />
@@ -121,9 +136,13 @@ function AdminDashboard() {
             </span>
           </button>
 
-          {/* SETTINGS */}
 
+          {/* SETTINGS */}
           <button
+            type="button"
+            onClick={() => {
+              console.log("Settings clicked");
+            }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition"
           >
             <Settings size={20} />
@@ -135,11 +154,12 @@ function AdminDashboard() {
 
         </nav>
 
-        {/* LOGOUT */}
 
+        {/* LOGOUT */}
         <div className="px-4 py-5 border-t border-slate-800">
 
           <button
+            type="button"
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition"
           >
@@ -154,12 +174,14 @@ function AdminDashboard() {
 
       </aside>
 
+
       {/* ==============================
           MAIN CONTENT
       ============================== */}
 
       <main className="flex-1 p-8">
 
+        {/* HEADER */}
         <div className="mb-8">
 
           <h2 className="text-3xl font-bold text-slate-800">
@@ -172,12 +194,15 @@ function AdminDashboard() {
 
         </div>
 
-        {/* DASHBOARD CARDS */}
+
+        {/* ==============================
+            DASHBOARD CARDS
+        ============================== */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-          {/* ELECTIONS */}
 
+          {/* ELECTIONS */}
           <div
             onClick={() => navigate("/admin/elections")}
             className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition"
@@ -204,8 +229,8 @@ function AdminDashboard() {
             </div>
           </div>
 
-          {/* CANDIDATES */}
 
+          {/* CANDIDATES */}
           <div
             onClick={() => navigate("/admin/candidates")}
             className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition"
@@ -232,10 +257,15 @@ function AdminDashboard() {
             </div>
           </div>
 
-          {/* VOTERS */}
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          {/* ==============================
+              VOTERS CARD
+          ============================== */}
 
+          <div
+            onClick={() => navigate("/admin/voters")}
+            className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition"
+          >
             <div className="flex items-center justify-between">
 
               <div>
@@ -256,13 +286,16 @@ function AdminDashboard() {
               </div>
 
             </div>
-
           </div>
 
+
           {/* RESULTS */}
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-
+          <div
+            onClick={() => {
+              console.log("Results clicked");
+            }}
+            className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition"
+          >
             <div className="flex items-center justify-between">
 
               <div>
@@ -283,7 +316,6 @@ function AdminDashboard() {
               </div>
 
             </div>
-
           </div>
 
         </div>

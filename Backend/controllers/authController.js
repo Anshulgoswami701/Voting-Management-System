@@ -49,7 +49,7 @@ const register = async (req, res) => {
     }
 
     // ==========================================
-    // VOTER VALIDATION
+    // 4. VOTER VALIDATION
     // ==========================================
 
     if (role === "voter") {
@@ -60,7 +60,7 @@ const register = async (req, res) => {
       }
 
       const existingVoter = await User.findOne({
-        voterId,
+        voterId: voterId.trim(),
       });
 
       if (existingVoter) {
@@ -71,7 +71,7 @@ const register = async (req, res) => {
     }
 
     // ==========================================
-    // ADMIN VALIDATION
+    // 5. ADMIN VALIDATION
     // ==========================================
 
     if (role === "admin") {
@@ -86,24 +86,14 @@ const register = async (req, res) => {
           message: "Invalid admin secret code",
         });
       }
-
-      // const existingAdmin = await User.findOne({
-      //   role: "admin",
-      // });
-
-      // if (existingAdmin) {
-      //   return res.status(409).json({
-      //     message: "Admin already exists. Only one admin is allowed.",
-      //   });
-      // }
     }
 
     // ==========================================
-    // CHECK EMAIL
+    // 6. CHECK EMAIL
     // ==========================================
 
     const existingUser = await User.findOne({
-      email,
+      email: email.toLowerCase().trim(),
     });
 
     if (existingUser) {
@@ -113,35 +103,39 @@ const register = async (req, res) => {
     }
 
     // ==========================================
-    // HASH PASSWORD
+    // 7. HASH PASSWORD
     // ==========================================
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // ==========================================
-    // CREATE USER
+    // 8. CREATE USER
     // ==========================================
 
     const user = await User.create({
-      fullName,
-      voterId: role === "voter" ? voterId : undefined,
-      email,
+      fullName: fullName.trim(),
+      voterId: role === "voter" ? voterId.trim() : undefined,
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
       role,
+      status: "active",
     });
 
     // ==========================================
-    // REGISTRATION RESPONSE
+    // 9. REGISTRATION RESPONSE
     // ==========================================
 
     return res.status(201).json({
       message: "Registration successful",
+
       user: {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
         voterId: user.voterId,
         role: user.role,
+        status: user.status,
+        hasVoted: user.hasVoted,
       },
     });
   } catch (error) {
@@ -185,7 +179,9 @@ const login = async (req, res) => {
     // 3. FIND USER BY EMAIL
     // ==========================================
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
 
     if (!user) {
       return res.status(401).json({
@@ -207,7 +203,10 @@ const login = async (req, res) => {
     // 5. CHECK PASSWORD
     // ==========================================
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
@@ -216,28 +215,46 @@ const login = async (req, res) => {
     }
 
     // ==========================================
-    // 6. CREATE JWT TOKEN
+    // 6. CHECK VOTER STATUS
+    // ==========================================
+
+    if (user.role === "voter" && user.status === "blocked") {
+      return res.status(403).json({
+        message: "Your voter account has been blocked by admin",
+      });
+    }
+
+    // ==========================================
+    // 7. CREATE JWT TOKEN
     // ==========================================
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      {
+        userId: user._id,
+        role: user.role,
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      {
+        expiresIn: "1d",
+      }
     );
 
     // ==========================================
-    // 7. LOGIN RESPONSE
+    // 8. LOGIN RESPONSE
     // ==========================================
 
     return res.status(200).json({
       message: "Login successful",
+
       token,
+
       user: {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
         voterId: user.voterId,
         role: user.role,
+        status: user.status,
         hasVoted: user.hasVoted,
       },
     });

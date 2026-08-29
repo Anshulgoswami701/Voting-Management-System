@@ -1,96 +1,67 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+// ==============================
+// AUTH
+// ==============================
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import LoginSuccess from "./pages/auth/LoginSuccess";
 
+// ==============================
+// ADMIN
+// ==============================
 import AdminDashboard from "./admin/AdminDashboard";
 import Elections from "./admin/Elections";
 import ElectionDetails from "./admin/ElectionDetails";
 import EditElection from "./admin/EditElection";
 import Candidates from "./admin/Candidates";
+import Voter from "./admin/Voter";
+import VoterDetails from "./admin/VoterDetails";
+import VoterDashboard from "./voter/VoterDashboard";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* ==============================
             DEFAULT
         ============================== */}
-        <Route
-          path="/"
-          element={
-            <Navigate
-              to="/login"
-              replace
-            />
-          }
-        />
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
         {/* ==============================
             AUTH
         ============================== */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/login" element={<Login />} />
 
-        <Route
-          path="/register"
-          element={<Register />}
-        />
+        <Route path="/register" element={<Register />} />
 
-        <Route
-          path="/login-success"
-          element={<LoginSuccess />}
-        />
+        <Route path="/login-success" element={<LoginSuccess />} />
 
         {/* ==============================
             ADMIN DASHBOARD
         ============================== */}
-        <Route
-          path="/admin/dashboard"
-          element={<AdminDashboard />}
-        />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
         {/* ==============================
             ADMIN ELECTIONS
         ============================== */}
-        <Route
-          path="/admin/elections"
-          element={<Elections />}
-        />
+        <Route path="/admin/elections" element={<Elections />} />
 
-        {/* ==============================
-            ELECTION DETAILS
-        ============================== */}
-        <Route
-          path="/admin/elections/:id"
-          element={<ElectionDetails />}
-        />
+        <Route path="/admin/elections/:id" element={<ElectionDetails />} />
 
-        {/* ==============================
-            EDIT ELECTION
-        ============================== */}
-        <Route
-          path="/admin/elections/:id/edit"
-          element={<EditElection />}
-        />
+        <Route path="/admin/elections/:id/edit" element={<EditElection />} />
 
         {/* ==============================
             ADMIN CANDIDATES
         ============================== */}
-        <Route
-          path="/admin/candidates"
-          element={<Candidates />}
-        />
+        <Route path="/admin/candidates" element={<Candidates />} />
 
+        {/* ==============================
+            ADMIN VOTERS
+        ============================== */}
+        <Route path="/admin/voters" element={<Voter />} />
+        <Route path="/admin/voters/:id" element={<VoterDetails />} />
+        <Route path="/voter/dashboard" element={<VoterDashboard />} />
       </Routes>
     </BrowserRouter>
   );

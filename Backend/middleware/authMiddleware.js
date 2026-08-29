@@ -1,10 +1,11 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/user");
 
 // ==========================================
 // AUTHENTICATION MIDDLEWARE
 // ==========================================
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     // ==========================================
     // 1. GET TOKEN FROM HEADER
@@ -18,7 +19,7 @@ const authMiddleware = (req, res, next) => {
       });
     }
 
-    // Expected format:
+    // Expected:
     // Authorization: Bearer TOKEN
 
     const parts = authHeader.split(" ");
@@ -41,16 +42,45 @@ const authMiddleware = (req, res, next) => {
     );
 
     // ==========================================
-    // 3. SAVE USER INFORMATION
+    // 3. CHECK USER FROM DATABASE
+    // ==========================================
+
+    const user = await User.findById(decoded.userId).select(
+      "role status"
+    );
+
+    if (!user) {
+      return res.status(401).json({
+        message: "User account not found",
+      });
+    }
+
+    // ==========================================
+    // 4. CHECK BLOCKED VOTER
+    // ==========================================
+
+    if (
+      user.role === "voter" &&
+      user.status === "blocked"
+    ) {
+      return res.status(403).json({
+        message: "Your voter account has been blocked by admin",
+        code: "ACCOUNT_BLOCKED",
+      });
+    }
+
+    // ==========================================
+    // 5. SAVE CURRENT USER INFORMATION
     // ==========================================
 
     req.user = {
-      userId: decoded.userId,
-      role: decoded.role,
+      userId: user._id,
+      role: user.role,
+      status: user.status,
     };
 
     // ==========================================
-    // 4. CONTINUE
+    // 6. CONTINUE
     // ==========================================
 
     next();

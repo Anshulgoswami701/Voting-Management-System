@@ -44,6 +44,12 @@ app.use("/api/elections", electionRoutes);
 app.use("/api/candidates", candidateRoutes);
 
 // ==========================================
+// VOTER ROUTES
+// ==========================================
+
+app.use("/api/voters", require("./routes/voterRoutes"));
+
+// ==========================================
 // TEST ROUTE
 // ==========================================
 
