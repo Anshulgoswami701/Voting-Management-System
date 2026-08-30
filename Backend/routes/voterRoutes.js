@@ -1,6 +1,8 @@
 const express = require("express");
 
 const {
+  getMyProfile,
+  updateMyProfile,
   getVoters,
   getVoterById,
   updateVoter,
@@ -10,62 +12,17 @@ const {
 
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
+const voterMiddleware = require("../middleware/voterMiddleware");
 
 const router = express.Router();
 
-// ==========================================
-// GET ALL VOTERS
-// ==========================================
+router.get("/me", authMiddleware, voterMiddleware, getMyProfile);
+router.put("/me", authMiddleware, voterMiddleware, updateMyProfile);
 
-router.get(
-  "/",
-  authMiddleware,
-  adminMiddleware,
-  getVoters
-);
-
-// ==========================================
-// GET SINGLE VOTER
-// ==========================================
-
-router.get(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  getVoterById
-);
-
-// ==========================================
-// UPDATE VOTER
-// ==========================================
-
-router.put(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  updateVoter
-);
-
-// ==========================================
-// BLOCK / UNBLOCK VOTER
-// ==========================================
-
-router.patch(
-  "/:id/status",
-  authMiddleware,
-  adminMiddleware,
-  updateVoterStatus
-);
-
-// ==========================================
-// DELETE VOTER
-// ==========================================
-
-router.delete(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  deleteVoter
-);
+router.get("/", authMiddleware, adminMiddleware, getVoters);
+router.get("/:id", authMiddleware, adminMiddleware, getVoterById);
+router.put("/:id", authMiddleware, adminMiddleware, updateVoter);
+router.patch("/:id/status", authMiddleware, adminMiddleware, updateVoterStatus);
+router.delete("/:id", authMiddleware, adminMiddleware, deleteVoter);
 
 module.exports = router;

@@ -2,45 +2,57 @@ const mongoose = require("mongoose");
 
 const candidateSchema = new mongoose.Schema(
   {
-    // Candidate name
     name: {
       type: String,
       required: true,
       trim: true,
     },
 
-    // Candidate ID
     candidateId: {
       type: String,
       required: true,
       trim: true,
     },
 
-    // Candidate belongs to which election
     election: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Election",
       required: true,
     },
 
-    // Party / Group name
-    party: {
+    position: {
       type: String,
-      required: true,
       trim: true,
+      default: "",
     },
 
-    // Candidate description
+    party: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    manifesto: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     description: {
       type: String,
       trim: true,
       default: "",
     },
 
-    // Candidate photo (later we can connect image upload)
     photo: {
       type: String,
       default: "",
+    },
+
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
   },
   {
@@ -48,8 +60,6 @@ const candidateSchema = new mongoose.Schema(
   }
 );
 
-// Same candidate ID can exist in different elections,
-// but not twice in the same election.
 candidateSchema.index(
   { candidateId: 1, election: 1 },
   { unique: true }

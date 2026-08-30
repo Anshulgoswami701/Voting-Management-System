@@ -1,5 +1,5 @@
 const Vote = require("../models/vote");
-const User = require("../models/user");
+const User = require("../models/User");
 const Election = require("../models/election");
 const Candidate = require("../models/candidate");
 
@@ -364,6 +364,29 @@ const getVotingStatus = async (req, res) => {
   }
 };
 
+const getMyVotingHistory = async (req, res) => {
+  try {
+    const votes = await Vote.find({ voter: req.user.userId })
+      .populate("election", "title startDate endDate status")
+      .populate("candidate", "name party position")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      message: "Voting history fetched successfully",
+      votes: votes.map((vote) => ({
+        _id: vote._id,
+        election: vote.election,
+        candidate: vote.candidate,
+        createdAt: vote.createdAt,
+        status: vote.election?.status || "unknown",
+      })),
+    });
+  } catch (error) {
+    console.error("Get voting history error:", error);
+    return res.status(500).json({ message: "Server error while fetching voting history" });
+  }
+};
+
 // ==========================================
 // EXPORT
 // ==========================================
@@ -373,4 +396,5 @@ module.exports = {
   getCandidatesForVoter,
   submitVote,
   getVotingStatus,
+  getMyVotingHistory,
 };

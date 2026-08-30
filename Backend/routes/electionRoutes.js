@@ -8,86 +8,24 @@ const {
   deleteElection,
   getActiveElectionsForVoter,
   getVoterElectionById,
+  getVoterElections,
 } = require("../controllers/electionController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
+const voterMiddleware = require("../middleware/voterMiddleware");
 
 const router = express.Router();
 
-// ======================================================
-// ADMIN ROUTES
-// ======================================================
+router.post("/", authMiddleware, adminMiddleware, createElection);
+router.get("/", authMiddleware, adminMiddleware, getElections);
 
-// CREATE ELECTION
-// ADMIN ONLY
-router.post(
-  "/",
-  authMiddleware,
-  adminMiddleware,
-  createElection
-);
+router.get("/voter/active", authMiddleware, voterMiddleware, getActiveElectionsForVoter);
+router.get("/voter/list", authMiddleware, voterMiddleware, getVoterElections);
+router.get("/voter/:id", authMiddleware, voterMiddleware, getVoterElectionById);
 
-// GET ALL ELECTIONS
-// ADMIN ONLY
-router.get(
-  "/",
-  authMiddleware,
-  adminMiddleware,
-  getElections
-);
-
-// ======================================================
-// VOTER ROUTES
-// IMPORTANT:
-// These routes MUST come before /:id
-// ======================================================
-
-// GET ACTIVE ELECTIONS
-// VOTER ONLY
-router.get(
-  "/voter/active",
-  authMiddleware,
-  getActiveElectionsForVoter
-);
-
-// GET SINGLE ELECTION + CANDIDATES
-// VOTER ONLY
-router.get(
-  "/voter/:id",
-  authMiddleware,
-  getVoterElectionById
-);
-
-// ======================================================
-// ADMIN SINGLE ELECTION ROUTES
-// ======================================================
-
-// GET SINGLE ELECTION
-// ADMIN ONLY
-router.get(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  getElectionById
-);
-
-// UPDATE ELECTION
-// ADMIN ONLY
-router.put(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  updateElection
-);
-
-// DELETE ELECTION
-// ADMIN ONLY
-router.delete(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  deleteElection
-);
+router.get("/:id", authMiddleware, adminMiddleware, getElectionById);
+router.put("/:id", authMiddleware, adminMiddleware, updateElection);
+router.delete("/:id", authMiddleware, adminMiddleware, deleteElection);
 
 module.exports = router;

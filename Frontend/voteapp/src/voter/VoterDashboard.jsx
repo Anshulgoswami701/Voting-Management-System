@@ -13,21 +13,21 @@ import {
   LockKeyhole,
 } from "lucide-react";
 
+import { clearAuthSession, getStoredUser } from "../components/ProtectedRoute";
+
 function VoterDashboard() {
   const navigate = useNavigate();
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = getStoredUser();
 
   // ==========================================
   // LOGOUT
   // ==========================================
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    navigate("/login");
+    clearAuthSession();
+    navigate("/login", { replace: true });
   };
 
   // ==========================================
@@ -488,6 +488,8 @@ function VoterDashboard() {
                     </div>
 
                     <button
+                      type="button"
+                      onClick={() => navigate("/voter/elections")}
                       disabled={!isActive}
                       className={`group flex shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-sm transition ${
                         isActive

@@ -1,4 +1,66 @@
-const User = require("../models/user");
+const User = require("../models/User");
+
+const getMyProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    console.error("Get my profile error:", error);
+    return res.status(500).json({ message: "Server error while fetching profile" });
+  }
+};
+
+const updateMyProfile = async (req, res) => {
+  try {
+    const { fullName, email } = req.body;
+    const user = await User.findById(req.user.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role !== "voter") {
+      return res.status(403).json({ message: "Only voters can update their profile" });
+    }
+
+    if (!fullName || !email) {
+      return res.status(400).json({ message: "Full name and email are required" });
+    }
+
+    if (email.toLowerCase() !== user.email.toLowerCase()) {
+      const emailExists = await User.findOne({ email: email.toLowerCase(), _id: { $ne: user._id } });
+      if (emailExists) {
+        return res.status(409).json({ message: "Email already registered" });
+      }
+    }
+
+    user.fullName = fullName.trim();
+    user.email = email.toLowerCase().trim();
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        voterId: user.voterId,
+        role: user.role,
+        status: user.status,
+        verificationStatus: user.verificationStatus,
+        accountStatus: user.accountStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Update my profile error:", error);
+    return res.status(500).json({ message: "Server error while updating profile" });
+  }
+};
 
 // ==========================================
 // GET ALL VOTERS
@@ -252,6 +314,8 @@ const deleteVoter = async (req, res) => {
 // ==========================================
 
 module.exports = {
+  getMyProfile,
+  updateMyProfile,
   getVoters,
   getVoterById,
   updateVoter,

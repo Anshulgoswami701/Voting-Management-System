@@ -15,6 +15,8 @@ import {
   Shield,
 } from "lucide-react";
 
+import { persistAuthSession } from "../../components/ProtectedRoute";
+
 function Login() {
   const navigate = useNavigate();
 
@@ -93,16 +95,8 @@ function Login() {
       // LOGIN SUCCESS
       // ==========================
 
-      // Save JWT token
-      localStorage.setItem("token", data.token);
+      persistAuthSession(data.token, data.user);
 
-      // Save user data
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data.user)
-      );
-
-      // Show success toast
       toast.success("Login successful!");
 
       // ==========================

@@ -169,11 +169,16 @@ function EditElection() {
       return;
     }
 
-    // ------------------------------------------
-    // START DATE
-    // ------------------------------------------
+    const startDate = new Date(
+      `${formData.startDate}T00:00:00`
+    );
+    const endDate = new Date(
+      `${formData.endDate}T00:00:00`
+    );
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
 
-    if (formData.startDate < today) {
+    if (startDate < todayDate) {
       toast.error(
         "Start date cannot be in the past"
       );
@@ -181,14 +186,15 @@ function EditElection() {
       return;
     }
 
-    // ------------------------------------------
-    // END DATE
-    // ------------------------------------------
+    if (endDate < todayDate) {
+      toast.error(
+        "End date cannot be in the past"
+      );
 
-    if (
-      formData.endDate <=
-      formData.startDate
-    ) {
+      return;
+    }
+
+    if (endDate <= startDate) {
       toast.error(
         "End date must be after start date"
       );

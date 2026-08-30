@@ -26,8 +26,32 @@ const electionSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["upcoming", "active", "ended"],
+      enum: [
+        "upcoming",
+        "active",
+        "ended",
+        "results_published",
+        "cancelled",
+      ],
       default: "upcoming",
+    },
+
+    eligibility: {
+      type: String,
+      enum: ["all_verified", "selected_voters"],
+      default: "all_verified",
+    },
+
+    eligibleVoters: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    resultsPublished: {
+      type: Boolean,
+      default: false,
     },
 
     createdBy: {

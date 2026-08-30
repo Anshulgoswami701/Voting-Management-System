@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
 
+import { getStoredUser } from "../../components/ProtectedRoute";
+
 function LoginSuccess() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(
-    localStorage.getItem("user")
-  );
+  const user = getStoredUser();
 
   const handleDashboard = () => {
     if (user?.role === "admin") {

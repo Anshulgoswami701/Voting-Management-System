@@ -1,5 +1,7 @@
 const Election = require("../models/election");
 const Candidate = require("../models/candidate");
+const User = require("../models/User");
+const Vote = require("../models/vote");
 
 // ==========================================
 // UPDATE ELECTION STATUSES
@@ -78,8 +80,8 @@ const createElection = async (req, res) => {
       });
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(`${startDate}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
 
     if (
       isNaN(start.getTime()) ||
@@ -96,6 +98,12 @@ const createElection = async (req, res) => {
     if (start < today) {
       return res.status(400).json({
         message: "Start date cannot be in the past",
+      });
+    }
+
+    if (end < today) {
+      return res.status(400).json({
+        message: "End date cannot be in the past",
       });
     }
 
@@ -242,8 +250,8 @@ const updateElection = async (req, res) => {
       });
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(`${startDate}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
 
     if (
       isNaN(start.getTime()) ||
@@ -251,6 +259,21 @@ const updateElection = async (req, res) => {
     ) {
       return res.status(400).json({
         message: "Invalid date format",
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      return res.status(400).json({
+        message: "Start date cannot be in the past",
+      });
+    }
+
+    if (end < today) {
+      return res.status(400).json({
+        message: "End date cannot be in the past",
       });
     }
 
@@ -435,6 +458,47 @@ const getVoterElectionById = async (
   }
 };
 
+const getVoterElections = async (req, res) => {
+  try {
+    await updateElectionStatuses();
+
+    const { userId } = req.user;
+
+    const voter = await User.findById(userId);
+    if (!voter || voter.role !== "voter") {
+      return res.status(403).json({ message: "Access denied. Voter only." });
+    }
+
+    const elections = await Election.find().sort({ startDate: 1 }).lean();
+    const votedElectionIds = await Vote.distinct("election", { voter: userId });
+
+    const enriched = elections.map((election) => {
+      const hasVoted = votedElectionIds.some((id) => id.toString() === election._id.toString());
+      const now = new Date();
+      let votingStatus = "not_started";
+
+      if (election.status === "upcoming") votingStatus = "upcoming";
+      if (election.status === "active") votingStatus = hasVoted ? "already_voted" : "active";
+      if (election.status === "ended") votingStatus = hasVoted ? "voted" : "ended";
+      if (election.status === "results_published") votingStatus = "results_published";
+
+      return {
+        ...election,
+        votingStatus,
+        hasVoted,
+      };
+    });
+
+    return res.status(200).json({
+      message: "Voter elections fetched successfully",
+      elections: enriched,
+    });
+  } catch (error) {
+    console.error("Get voter elections error:", error);
+    return res.status(500).json({ message: "Server error while fetching voter elections" });
+  }
+};
+
 // ==========================================
 // EXPORT
 // ==========================================
@@ -450,4 +514,5 @@ module.exports = {
   // VOTER
   getActiveElectionsForVoter,
   getVoterElectionById,
+  getVoterElections,
 };

@@ -1,1 +1,90 @@
 @import "tailwindcss";
+
+:root {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+  line-height: 1.5;
+  font-weight: 400;
+  font-size: 16px;
+}
+
+/* Increase all text sizes globally */
+html {
+  font-size: 16px;
+}
+
+body {
+  font-size: 16px;
+}
+
+/* Override Tailwind text-size classes for larger font */
+.text-xs {
+  font-size: 0.875rem; /* 14px instead of 12px */
+}
+
+.text-sm {
+  font-size: 1rem; /* 16px instead of 14px */
+}
+
+.text-base {
+  font-size: 1.125rem; /* 18px instead of 16px */
+}
+
+.text-lg {
+  font-size: 1.25rem; /* 20px instead of 18px */
+}
+
+.text-xl {
+  font-size: 1.5rem; /* 24px instead of 20px */
+}
+
+.text-2xl {
+  font-size: 1.875rem; /* 30px instead of 24px */
+}
+
+.text-3xl {
+  font-size: 2.25rem; /* 36px instead of 30px */
+}
+
+.text-4xl {
+  font-size: 3rem; /* 48px instead of 36px */
+}
+
+.text-5xl {
+  font-size: 3.75rem; /* 60px instead of 48px */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@media (max-width: 640px) {
+  body {
+    background: #f8fafc;
+  }
+}

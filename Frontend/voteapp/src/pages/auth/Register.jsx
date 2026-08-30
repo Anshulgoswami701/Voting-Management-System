@@ -17,6 +17,8 @@ import {
   KeyRound,
 } from "lucide-react";
 
+import { clearAuthSession } from "../../components/ProtectedRoute";
+
 function Register() {
   const navigate = useNavigate();
 
@@ -142,9 +144,7 @@ function Register() {
         data.user
       );
 
-      // ==========================
-      // REDIRECT TO LOGIN
-      // ==========================
+      clearAuthSession();
 
       setTimeout(() => {
         navigate("/login");

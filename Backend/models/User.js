@@ -35,9 +35,16 @@ const userSchema = new mongoose.Schema(
       default: "voter",
     },
 
-    hasVoted: {
-      type: Boolean,
-      default: false,
+    verificationStatus: {
+      type: String,
+      enum: ["pending", "verified", "rejected"],
+      default: "pending",
+    },
+
+    accountStatus: {
+      type: String,
+      enum: ["active", "blocked"],
+      default: "active",
     },
 
     status: {
@@ -45,10 +52,35 @@ const userSchema = new mongoose.Schema(
       enum: ["active", "blocked"],
       default: "active",
     },
+
+    hasVoted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+userSchema.pre("save", async function () {
+  if (this.role === "admin") {
+    this.verificationStatus = "verified";
+    this.accountStatus = "active";
+    this.status = "active";
+  }
+
+  if (this.accountStatus && !this.status) {
+    this.status = this.accountStatus;
+  }
+
+  if (this.status && !this.accountStatus) {
+    this.accountStatus = this.status;
+  }
+
+  if (this.status !== this.accountStatus) {
+    this.accountStatus = this.status;
+  }
+});
 
 module.exports = mongoose.model("User", userSchema);
