@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -25,51 +24,17 @@ import VoterElectionDetails from "./voter/VoterElectionDetails";
 import VoterHistory from "./voter/VoterHistory";
 import VoterProfile from "./voter/VoterProfile";
 import VoterResults from "./voter/VoterResults";
-import ProtectedRoute, { getDashboardRoute, getStoredUser, isAuthenticated } from "./components/ProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
-  const [authState, setAuthState] = useState(() => ({
-    user: getStoredUser(),
-    isAuthenticated: isAuthenticated(),
-  }));
-
-  useEffect(() => {
-    const syncAuthState = () => {
-      setAuthState({
-        user: getStoredUser(),
-        isAuthenticated: isAuthenticated(),
-      });
-    };
-
-    syncAuthState();
-    window.addEventListener("storage", syncAuthState);
-    window.addEventListener("auth:change", syncAuthState);
-
-    return () => {
-      window.removeEventListener("storage", syncAuthState);
-      window.removeEventListener("auth:change", syncAuthState);
-    };
-  }, []);
-
-  const redirectPath = authState.user ? getDashboardRoute() : "/login";
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/"
-          element={<Navigate to={authState.isAuthenticated ? redirectPath : "/login"} replace />}
-        />
+        <Route path="/" element={<Login />} />
 
-        <Route
-          path="/login"
-          element={authState.isAuthenticated ? <Navigate to={redirectPath} replace /> : <Login />}
-        />
+        <Route path="/login" element={<Login />} />
 
-        <Route
-          path="/register"
-          element={authState.isAuthenticated ? <Navigate to={redirectPath} replace /> : <Register />}
-        />
+        <Route path="/register" element={<Register />} />
 
         <Route path="/login-success" element={<LoginSuccess />} />
 
@@ -199,7 +164,7 @@ function App() {
           }
         />
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
