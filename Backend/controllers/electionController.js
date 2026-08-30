@@ -1,4 +1,5 @@
 const Election = require("../models/election");
+const Candidate = require("../models/candidate");
 
 // ==========================================
 // UPDATE ELECTION STATUSES
@@ -8,10 +9,7 @@ const updateElectionStatuses = async () => {
   try {
     const now = new Date();
 
-    // ========================================
     // UPCOMING
-    // ========================================
-
     await Election.updateMany(
       {
         startDate: { $gt: now },
@@ -23,10 +21,7 @@ const updateElectionStatuses = async () => {
       }
     );
 
-    // ========================================
     // ACTIVE
-    // ========================================
-
     await Election.updateMany(
       {
         startDate: { $lte: now },
@@ -39,10 +34,7 @@ const updateElectionStatuses = async () => {
       }
     );
 
-    // ========================================
     // ENDED
-    // ========================================
-
     await Election.updateMany(
       {
         endDate: { $lte: now },
@@ -63,6 +55,7 @@ const updateElectionStatuses = async () => {
 
 // ==========================================
 // CREATE ELECTION
+// ADMIN ONLY
 // ==========================================
 
 const createElection = async (req, res) => {
@@ -74,7 +67,6 @@ const createElection = async (req, res) => {
       endDate,
     } = req.body;
 
-    // Required fields
     if (
       !title ||
       !description ||
@@ -86,11 +78,9 @@ const createElection = async (req, res) => {
       });
     }
 
-    // Convert dates
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // Validate dates
     if (
       isNaN(start.getTime()) ||
       isNaN(end.getTime())
@@ -100,29 +90,20 @@ const createElection = async (req, res) => {
       });
     }
 
-    // Start date cannot be in past
     const today = new Date();
-
     today.setHours(0, 0, 0, 0);
 
     if (start < today) {
       return res.status(400).json({
-        message:
-          "Start date cannot be in the past",
+        message: "Start date cannot be in the past",
       });
     }
 
-    // End date must be after start date
     if (end <= start) {
       return res.status(400).json({
-        message:
-          "End date must be after start date",
+        message: "End date must be after start date",
       });
     }
-
-    // ========================================
-    // CREATE ELECTION
-    // ========================================
 
     const election = await Election.create({
       title: title.trim(),
@@ -134,8 +115,7 @@ const createElection = async (req, res) => {
     });
 
     return res.status(201).json({
-      message:
-        "Election created successfully",
+      message: "Election created successfully",
       election,
     });
   } catch (error) {
@@ -153,11 +133,11 @@ const createElection = async (req, res) => {
 
 // ==========================================
 // GET ALL ELECTIONS
+// ADMIN ONLY
 // ==========================================
 
 const getElections = async (req, res) => {
   try {
-    // Update statuses before fetching
     await updateElectionStatuses();
 
     const elections = await Election.find()
@@ -187,11 +167,11 @@ const getElections = async (req, res) => {
 
 // ==========================================
 // GET SINGLE ELECTION
+// ADMIN ONLY
 // ==========================================
 
 const getElectionById = async (req, res) => {
   try {
-    // Update status first
     await updateElectionStatuses();
 
     const { id } = req.params;
@@ -228,6 +208,7 @@ const getElectionById = async (req, res) => {
 
 // ==========================================
 // UPDATE ELECTION
+// ADMIN ONLY
 // ==========================================
 
 const updateElection = async (req, res) => {
@@ -241,10 +222,6 @@ const updateElection = async (req, res) => {
       endDate,
     } = req.body;
 
-    // ========================================
-    // FIND ELECTION
-    // ========================================
-
     const election =
       await Election.findById(id);
 
@@ -253,10 +230,6 @@ const updateElection = async (req, res) => {
         message: "Election not found",
       });
     }
-
-    // ========================================
-    // REQUIRED FIELDS
-    // ========================================
 
     if (
       !title ||
@@ -269,16 +242,8 @@ const updateElection = async (req, res) => {
       });
     }
 
-    // ========================================
-    // CONVERT DATES
-    // ========================================
-
     const start = new Date(startDate);
     const end = new Date(endDate);
-
-    // ========================================
-    // VALIDATE DATES
-    // ========================================
 
     if (
       isNaN(start.getTime()) ||
@@ -289,10 +254,6 @@ const updateElection = async (req, res) => {
       });
     }
 
-    // ========================================
-    // END DATE VALIDATION
-    // ========================================
-
     if (end <= start) {
       return res.status(400).json({
         message:
@@ -300,22 +261,13 @@ const updateElection = async (req, res) => {
       });
     }
 
-    // ========================================
-    // UPDATE DATA
-    // ========================================
-
     election.title = title.trim();
 
     election.description =
       description.trim();
 
     election.startDate = start;
-
     election.endDate = end;
-
-    // ========================================
-    // UPDATE STATUS
-    // ========================================
 
     const now = new Date();
 
@@ -329,10 +281,6 @@ const updateElection = async (req, res) => {
     } else {
       election.status = "upcoming";
     }
-
-    // ========================================
-    // SAVE
-    // ========================================
 
     await election.save();
 
@@ -356,6 +304,7 @@ const updateElection = async (req, res) => {
 
 // ==========================================
 // DELETE ELECTION
+// ADMIN ONLY
 // ==========================================
 
 const deleteElection = async (req, res) => {
@@ -372,6 +321,11 @@ const deleteElection = async (req, res) => {
     }
 
     await Election.findByIdAndDelete(id);
+
+    // Delete candidates belonging to election
+    await Candidate.deleteMany({
+      election: id,
+    });
 
     return res.status(200).json({
       message:
@@ -391,6 +345,97 @@ const deleteElection = async (req, res) => {
 };
 
 // ==========================================
+// GET ACTIVE ELECTIONS
+// VOTER ONLY
+// ==========================================
+
+const getActiveElectionsForVoter = async (
+  req,
+  res
+) => {
+  try {
+    await updateElectionStatuses();
+
+    const elections = await Election.find({
+      status: "active",
+    })
+      .select(
+        "title description startDate endDate status"
+      )
+      .sort({ startDate: 1 });
+
+    return res.status(200).json({
+      message:
+        "Active elections fetched successfully",
+      elections,
+    });
+  } catch (error) {
+    console.error(
+      "Get active elections error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Server error while fetching active elections",
+    });
+  }
+};
+
+// ==========================================
+// GET VOTER ELECTION DETAILS
+// VOTER ONLY
+// ==========================================
+
+const getVoterElectionById = async (
+  req,
+  res
+) => {
+  try {
+    await updateElectionStatuses();
+
+    const { id } = req.params;
+
+    const election =
+      await Election.findById(id).select(
+        "title description startDate endDate status"
+      );
+
+    if (!election) {
+      return res.status(404).json({
+        message: "Election not found",
+      });
+    }
+
+    const candidates =
+      await Candidate.find({
+        election: id,
+      }).sort({
+        createdAt: 1,
+      });
+
+    return res.status(200).json({
+      message:
+        "Election details fetched successfully",
+
+      election,
+
+      candidates,
+    });
+  } catch (error) {
+    console.error(
+      "Get voter election details error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Server error while fetching election details",
+    });
+  }
+};
+
+// ==========================================
 // EXPORT
 // ==========================================
 
@@ -401,4 +446,8 @@ module.exports = {
   updateElection,
   deleteElection,
   updateElectionStatuses,
+
+  // VOTER
+  getActiveElectionsForVoter,
+  getVoterElectionById,
 };

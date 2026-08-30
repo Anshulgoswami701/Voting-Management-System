@@ -353,7 +353,7 @@ function VoterDashboard() {
           {/* ELECTION CARD */}
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-            <div className="border-b border-slate-100 bg-gradient-to-r from-indigo-50/80 to-white px-6 py-6 md:px-8">
+            <div className="border-b border-slate-100 bg-gradient-to- from-indigo-50/80 to-white px-6 py-6 md:px-8">
 
               <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
 
