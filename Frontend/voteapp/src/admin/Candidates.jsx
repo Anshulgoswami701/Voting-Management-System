@@ -253,11 +253,12 @@ const Candidates = () => {
   </div>
 
   <button
-    onClick={() => setShowAddModal(true)}
-    className="bg-indigo-600 text-white px-5 py-3 rounded-lg font-medium hover:bg-indigo-700 transition"
-  >
-    + Add Candidate
-  </button>
+  type="button"
+  onClick={() => setShowForm(true)}
+  className="bg-indigo-600 text-white px-5 py-3 rounded-lg font-medium hover:bg-indigo-700 transition"
+>
+  + Add Candidate
+</button>
 </div>
 
       {/* ======================================
