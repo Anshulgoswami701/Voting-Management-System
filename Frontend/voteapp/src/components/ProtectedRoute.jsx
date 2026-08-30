@@ -59,17 +59,25 @@ export const getStoredUser = () => {
     return null;
   }
 
+  let savedUser = null;
+  try {
+    const savedUserRaw = localStorage.getItem("user");
+    savedUser = savedUserRaw ? JSON.parse(savedUserRaw) : null;
+  } catch (error) {
+    savedUser = null;
+  }
+
   const user = {
     role,
-    fullName: payload.fullName || payload.name || "User",
-    email: payload.email || "",
-    voterId: payload.voterId || payload.userId || "",
-    status: payload.status || "active",
-    hasVoted: payload.hasVoted ?? false,
+    fullName: savedUser?.fullName || payload.fullName || payload.name || "User",
+    email: savedUser?.email || payload.email || "",
+    voterId: savedUser?.voterId || payload.voterId || "",
+    status: savedUser?.status || payload.status || "active",
+    hasVoted: typeof savedUser?.hasVoted === "boolean" ? savedUser.hasVoted : (payload.hasVoted ?? false),
   };
 
-  const savedUser = localStorage.getItem("user");
-  if (!savedUser || JSON.stringify(user) !== savedUser) {
+  const savedUserValue = localStorage.getItem("user");
+  if (!savedUserValue || JSON.stringify(user) !== savedUserValue) {
     localStorage.setItem("user", JSON.stringify(user));
   }
 

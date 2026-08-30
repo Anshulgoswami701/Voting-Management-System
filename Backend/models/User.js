@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const crypto = require("crypto");
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const userSchema = new mongoose.Schema(
   {
@@ -13,6 +16,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
       trim: true,
+      set: (value) => (value ? String(value).trim().toUpperCase() : value),
     },
 
     email: {
@@ -21,12 +25,13 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      match: [emailRegex, "Please enter a valid email address"],
     },
 
     password: {
       type: String,
       required: true,
-      minlength: 6,
+      minlength: 8,
     },
 
     role: {
@@ -57,11 +62,39 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    termsAccepted: {
+      type: Boolean,
+      default: false,
+    },
+
+    acceptedAt: {
+      type: Date,
+      default: null,
+    },
+
+    resetTokenHash: {
+      type: String,
+      default: null,
+    },
+
+    resetTokenExpiresAt: {
+      type: Date,
+      default: null,
+    },
+
+    resetTokenUsedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+userSchema.index({ voterId: 1 }, { unique: true, sparse: true });
+userSchema.index({ email: 1 }, { unique: true });
 
 userSchema.pre("save", async function () {
   if (this.role === "admin") {
@@ -82,5 +115,19 @@ userSchema.pre("save", async function () {
     this.accountStatus = this.status;
   }
 });
+
+userSchema.methods.generatePasswordResetToken = function () {
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  this.resetTokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+  this.resetTokenExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+  this.resetTokenUsedAt = null;
+  return rawToken;
+};
+
+userSchema.methods.clearPasswordResetToken = function () {
+  this.resetTokenHash = null;
+  this.resetTokenExpiresAt = null;
+  this.resetTokenUsedAt = new Date();
+};
 
 module.exports = mongoose.model("User", userSchema);

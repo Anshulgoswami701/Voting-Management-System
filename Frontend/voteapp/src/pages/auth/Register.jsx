@@ -1,6 +1,35 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+const generateStrongPassword = () => {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const numbers = "23456789";
+  const specials = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+  const all = upper + lower + numbers + specials;
+
+  const picks = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    numbers[Math.floor(Math.random() * numbers.length)],
+    specials[Math.floor(Math.random() * specials.length)],
+  ];
+
+  while (picks.length < 12) {
+    picks.push(all[Math.floor(Math.random() * all.length)]);
+  }
+
+  for (let i = picks.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [picks[i], picks[j]] = [picks[j], picks[i]];
+  }
+
+  return picks.join("");
+};
+
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -26,6 +55,7 @@ function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -62,12 +92,46 @@ function Register() {
   // ==========================
   // REGISTER
   // ==========================
+  const handleGeneratePassword = () => {
+    const suggestedPassword = generateStrongPassword();
+    setFormData((prev) => ({
+      ...prev,
+      password: suggestedPassword,
+      confirmPassword: suggestedPassword,
+    }));
+    toast.info("Strong password suggested.");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Password validation
+    if (!formData.fullName.trim()) {
+      toast.error("Please enter your full name.");
+      return;
+    }
+
+    if (role === "voter" && !formData.voterId.trim()) {
+      toast.error("Please enter a Voter ID.");
+      return;
+    }
+
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    if (!strongPasswordRegex.test(formData.password)) {
+      toast.error("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match!");
+      return;
+    }
+
+    if (!termsAccepted) {
+      toast.error("You must accept the Terms & Conditions and Privacy Policy before registering.");
       return;
     }
 
@@ -80,6 +144,7 @@ function Register() {
       password: formData.password,
       confirmPassword: formData.confirmPassword,
       role: role,
+      termsAccepted,
     };
 
     // Voter ID only for voter
@@ -564,6 +629,18 @@ function Register() {
 
                   </div>
 
+                  <div className="mt-2 text-xs text-slate-500">
+                    Must be 8+ chars with uppercase, lowercase, number, and special character.
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleGeneratePassword}
+                    className="mt-3 w-full border border-indigo-200 bg-indigo-50 text-indigo-700 font-medium py-2.5 rounded-xl hover:bg-indigo-100 transition"
+                  >
+                    Suggest Strong Password
+                  </button>
+
                 </div>
 
                 {/* CONFIRM PASSWORD */}
@@ -623,16 +700,21 @@ function Register() {
 
                   <input
                     type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
                     required
                     className="mt-1 w-4 h-4 accent-indigo-600"
                   />
 
                   <p className="text-sm text-slate-500">
                     I agree to the{" "}
-                    <span className="text-indigo-600 font-medium cursor-pointer">
+                    <button type="button" onClick={() => window.alert("Terms & Conditions\n\nThis platform is for secure voting and account management. Users must provide accurate information, maintain account security, and comply with election rules. Any misuse or attempted tampering may result in account restrictions.")} className="text-indigo-600 font-medium cursor-pointer underline">
                       Terms & Conditions
-                    </span>{" "}
-                    and Privacy Policy.
+                    </button>{" "}
+                    and{" "}
+                    <button type="button" onClick={() => window.alert("Privacy Policy\n\nWe collect only the information required to operate the voting system, including account details, voting status, and election records. Data is used solely for authentication, election administration, transparency, and security. We do not sell personal information and we protect access through secure authentication and role-based controls.")} className="text-indigo-600 font-medium cursor-pointer underline">
+                      Privacy Policy
+                    </button>.
                   </p>
 
                 </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Vote,
@@ -19,8 +19,47 @@ function VoterDashboard() {
   const navigate = useNavigate();
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [profileUser, setProfileUser] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   const user = getStoredUser();
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) {
+        setProfileLoading(false);
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setProfileLoading(false);
+          return;
+        }
+
+        const response = await fetch("http://localhost:5000/api/voters/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          throw new Error("Profile fetch failed");
+        }
+
+        const data = await response.json();
+        setProfileUser(data.user || null);
+      } catch (error) {
+        console.error("Voter dashboard profile error:", error);
+        setProfileUser(null);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [user]);
+
+  const currentUser = profileUser || user;
 
   // ==========================================
   // LOGOUT
@@ -33,7 +72,7 @@ function VoterDashboard() {
   // ==========================================
   // SESSION CHECK
   // ==========================================
-  if (!user) {
+  if (!user && !profileLoading) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
         <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
@@ -60,8 +99,8 @@ function VoterDashboard() {
     );
   }
 
-  const hasVoted = user.hasVoted === true;
-  const isActive = user.status === "active";
+  const hasVoted = currentUser.hasVoted === true;
+  const isActive = currentUser.status === "active";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -95,12 +134,12 @@ function VoterDashboard() {
             {/* USER */}
             <div className="hidden items-center gap-2 sm:flex">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-600">
-                {user.fullName?.charAt(0)?.toUpperCase()}
+                {currentUser.fullName?.charAt(0)?.toUpperCase()}
               </div>
 
               <div className="leading-tight">
                 <p className="text-sm font-semibold text-slate-800">
-                  {user.fullName}
+                  {currentUser.fullName}
                 </p>
 
                 <p className="text-[11px] text-slate-400">
@@ -139,7 +178,7 @@ function VoterDashboard() {
               </p>
 
               <h2 className="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-                Welcome, {user.fullName}
+                Welcome, {currentUser.fullName}
               </h2>
 
               <p className="mt-2 max-w-2xl text-sm text-slate-500 md:text-base">
@@ -178,16 +217,16 @@ function VoterDashboard() {
             <div className="flex items-center gap-4">
 
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-2xl font-bold text-indigo-600 ring-8 ring-indigo-50/60">
-                {user.fullName?.charAt(0)?.toUpperCase()}
+                {currentUser.fullName?.charAt(0)?.toUpperCase()}
               </div>
 
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
-                  {user.fullName}
+                  {currentUser.fullName}
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  {user.email}
+                  {currentUser.email}
                 </p>
 
                 <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
@@ -204,7 +243,7 @@ function VoterDashboard() {
               </p>
 
               <p className="mt-1 text-lg font-bold tracking-wide text-slate-900">
-                {user.voterId || "-"}
+                {currentUser.voterId || "-"}
               </p>
             </div>
 
@@ -227,7 +266,7 @@ function VoterDashboard() {
                 </p>
 
                 <p className="mt-2 text-2xl font-bold tracking-wide text-slate-900">
-                  {user.voterId || "-"}
+                  {currentUser.voterId || "-"}
                 </p>
               </div>
 
