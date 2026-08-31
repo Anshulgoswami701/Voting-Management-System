@@ -113,7 +113,7 @@ function VoterElections() {
               />
             </div>
 
-            <div className="relative min-w[180px]">
+            <div className="relative w-full md:min-w-[180px]">
               <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <select
                 value={status}

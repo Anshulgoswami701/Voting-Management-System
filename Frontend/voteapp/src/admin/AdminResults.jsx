@@ -127,7 +127,7 @@ function AdminResults() {
       </div>
 
       {/* CONTENT */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* ELECTIONS LIST */}
           <div className="lg:col-span-1">
@@ -205,7 +205,7 @@ function AdminResults() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 p-8 border-b border-slate-700">
+                  <div className="grid grid-cols-3 gap-4 p-4 sm:p-8 border-b border-slate-700">
                     <div className="rounded-xl bg-gradient-to- br from-slate-800 to-slate-900 p-6 text-center shadow-lg shadow-slate-900/20">
                       <Users size={32} className="mx-auto text-indigo-400 mb-3" />
                       <p className="text-base text-slate-300">Total Votes</p>

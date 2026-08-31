@@ -525,7 +525,7 @@ function Elections() {
           HEADER
       ====================================== */}
 
-      <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6 lg:px-8">
+      <header className="min-h-20 h-auto bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
 
         <div className="flex items-center gap-3">
 
@@ -1077,7 +1077,7 @@ function Elections() {
       {deleteModal.open && (
 
         <div
-          className="fixed inset-0 z[60] bg-slate-950/60 flex items-center justify-center px-4"
+          className="fixed inset-0 z [60] bg-slate-950/60 flex items-center justify-center px-4"
           onClick={closeDeleteModal}
         >
 

@@ -120,7 +120,7 @@ function VoterResults() {
       </div>
 
       {/* CONTENT */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {loading ? (
           <div className="flex items-center justify-center min-h-96">
             <div className="text-center">
@@ -129,7 +129,7 @@ function VoterResults() {
             </div>
           </div>
         ) : results ? (
-          <div className="max-w-5xl mx-auto space-y-6">
+          <div className="mx-auto w-full max-w-5xl space-y-6">
             {/* ELECTION INFO & STATS */}
             <div className="rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
               <div className="bg-gradient-to- r from-indigo-700 to-indigo-800 px-8 py-8">
@@ -140,7 +140,7 @@ function VoterResults() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-6 p-8 border-b border-slate-700">
+              <div className="grid grid-cols-3 gap-4 p-4 sm:gap-6 sm:p-8 border-b border-slate-700">
                 <div className="rounded-xl bg-gradient-to-  br from-slate-800 to-slate-900 p-6 text-center shadow-lg shadow-slate-900/20">
                   <Users size={36} className="mx-auto text-indigo-400 mb-3" />
                   <p className="text-base text-slate-300 uppercase tracking-wide">Total Votes Cast</p>
@@ -183,7 +183,7 @@ function VoterResults() {
                 </div>
 
                 <div className="p-8 bg-[#7a4b10] bg-opacity-95">
-                  <div className="grid grid-cols-2 gap-8 mb-8">
+                  <div className="grid grid-cols-2 gap-5 mb-8 sm:gap-8">
                     <div>
                       {results.winner.party && (
                         <p className="text-xs text-yellow-100 uppercase tracking-[0.18em]">Political Party</p>
