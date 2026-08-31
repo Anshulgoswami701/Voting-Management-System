@@ -62,7 +62,7 @@ router.get("/:electionId", authMiddleware, async (req, res) => {
       return res.status(200).json({ result });
     }
 
-    if (election.status !== "results_published") {
+    if (election.status !== "results_published" && !election.resultsPublished) {
       return res.status(403).json({ message: "Results have not been published yet." });
     }
 

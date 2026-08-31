@@ -6,53 +6,52 @@
   background: #f8fafc;
   line-height: 1.5;
   font-weight: 400;
-  font-size: 16px;
+  font-size: 14px;
 }
 
-/* Increase all text sizes globally */
 html {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 body {
-  font-size: 16px;
+  font-size: 14px;
+  background: #f8fafc;
 }
 
-/* Override Tailwind text-size classes for larger font */
 .text-xs {
-  font-size: 0.875rem; /* 14px instead of 12px */
+  font-size: 0.7rem;
 }
 
 .text-sm {
-  font-size: 1rem; /* 16px instead of 14px */
+  font-size: 0.8125rem;
 }
 
 .text-base {
-  font-size: 1.125rem; /* 18px instead of 16px */
+  font-size: 0.9375rem;
 }
 
 .text-lg {
-  font-size: 1.25rem; /* 20px instead of 18px */
+  font-size: 1.0625rem;
 }
 
 .text-xl {
-  font-size: 1.5rem; /* 24px instead of 20px */
+  font-size: 1.25rem;
 }
 
 .text-2xl {
-  font-size: 1.875rem; /* 30px instead of 24px */
+  font-size: 1.5rem;
 }
 
 .text-3xl {
-  font-size: 2.25rem; /* 36px instead of 30px */
+  font-size: 1.875rem;
 }
 
 .text-4xl {
-  font-size: 3rem; /* 48px instead of 36px */
+  font-size: 2.25rem;
 }
 
 .text-5xl {
-  font-size: 3.75rem; /* 60px instead of 48px */
+  font-size: 2.75rem;
 }
 
 * {

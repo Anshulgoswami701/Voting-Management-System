@@ -26,7 +26,7 @@ const sanitizeUserResponse = (user) => ({
 });
 
 const sendResetEmail = async (user, token) => {
-  const resetUrl = `${process.env.APP_BASE_URL || "http://localhost:5173"}/reset-password?token=${encodeURIComponent(token)}`;
+  const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${encodeURIComponent(token)}`;
 
   try {
     await sendPasswordResetEmail({
@@ -36,7 +36,7 @@ const sendResetEmail = async (user, token) => {
     });
     return { ok: true, resetUrl };
   } catch (error) {
-    console.error("Password reset email send failed:", error.message);
+    console.error("Password reset email send failed:", error.message || error);
     return { ok: false, resetUrl };
   }
 };

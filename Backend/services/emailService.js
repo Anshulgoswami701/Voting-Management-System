@@ -2,16 +2,16 @@ const nodemailer = require("nodemailer");
 
 const requireEmailConfig = () => {
   const config = {
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT || 587),
-    secure: String(process.env.EMAIL_SECURE || "false") === "true",
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: String(process.env.SMTP_SECURE || "false") === "true",
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.EMAIL_FROM || process.env.SMTP_USER,
   };
 
   if (!config.host || !config.user || !config.pass) {
-    throw new Error("Email SMTP configuration is missing. Set EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, and optionally EMAIL_FROM.");
+    throw new Error("Email SMTP configuration is missing. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and optionally EMAIL_FROM.");
   }
 
   return config;
@@ -53,8 +53,13 @@ const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
     `,
   };
 
-  await transporter.sendMail(mailOptions);
-  return true;
+  try {
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error("SMTP sendMail failed:", error);
+    throw error;
+  }
 };
 
 module.exports = {

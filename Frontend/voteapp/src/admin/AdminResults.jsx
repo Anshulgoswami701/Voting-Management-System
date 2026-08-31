@@ -196,35 +196,35 @@ function AdminResults() {
               <div className="space-y-6">
                 {/* ELECTION INFO & STATS */}
                 <div className="rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
-                  <div className="bg-linear-to-r from-indigo-600 to-indigo-700 px-8 py-8">
+                  <div className="bg-gradient-to r from-indigo-700 to-indigo-800 px-8 py-8">
                     <h2 className="text-3xl font-bold text-white mb-2">
                       {results.election.title}
                     </h2>
-                    <p className="text-lg text-indigo-200">
+                    <p className="text-base text-indigo-100">
                       Election Results Summary
                     </p>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 p-8 border-b border-slate-700">
-                    <div className="rounded-xl bg-gradient-to- br from-slate-700 to-slate-800 p-6 text-center">
+                    <div className="rounded-xl bg-gradient-to- br from-slate-800 to-slate-900 p-6 text-center shadow-lg shadow-slate-900/20">
                       <Users size={32} className="mx-auto text-indigo-400 mb-3" />
-                      <p className="text-lg text-slate-400">Total Votes</p>
+                      <p className="text-base text-slate-300">Total Votes</p>
                       <p className="mt-2 text-4xl font-bold text-white">
                         {results.totalVotes}
                       </p>
                     </div>
 
-                    <div className="rounded-xl bg-gradient-to- br from-slate-700 to-slate-800 p-6 text-center">
+                    <div className="rounded-xl bg-gradient-to- br from-slate-800 to-slate-900 p-6 text-center shadow-lg shadow-slate-900/20">
                       <BarChart3 size={32} className="mx-auto text-purple-400 mb-3" />
-                      <p className="text-lg text-slate-400">Candidates</p>
+                      <p className="text-base text-slate-300">Candidates</p>
                       <p className="mt-2 text-4xl font-bold text-white">
                         {results.results.length}
                       </p>
                     </div>
 
-                    <div className="rounded-xl bg-gradient-to- br from-slate-700 to-slate-800 p-6 text-center">
+                    <div className="rounded-xl bg-gradient-to- br from-slate-800 to-slate-900 p-6 text-center shadow-lg shadow-slate-900/20">
                       <TrendingUp size={32} className="mx-auto text-emerald-400 mb-3" />
-                      <p className="text-lg text-slate-400">Status</p>
+                      <p className="text-base text-slate-300">Status</p>
                       <p className="mt-2 text-lg font-bold text-emerald-300 uppercase">
                         {results.election.resultsPublished ? "Published" : "Calculating"}
                       </p>
@@ -251,45 +251,44 @@ function AdminResults() {
 
                 {/* WINNER HIGHLIGHT */}
                 {results.winner && (
-                  <div className="rounded-2xl border-2 border-yellow-500/50 bg-gradient-to- br from-yellow-900/30 to-yellow-800/20 overflow-hidden">
-                    <div className="bg-gradient-to- r from-yellow-600 to-yellow-700 px-8 py-6">
+                  <div className="rounded-2xl border-2 border-yellow-400/60 bg-gradient-to- br from-amber-100 via-yellow-200 to-yellow-300 overflow-hidden shadow-xl shadow-yellow-200/40">
+                    <div className="bg-gradient-to- r from-yellow-400 to-amber-300 px-8 py-6">
                       <div className="flex items-center gap-3">
-                        <Award size={36} className="text-yellow-300" />
+                        <Award size={36} className="text-slate-900" />
                         <div>
-                          <p className="text-lg text-yellow-200">ELECTION WINNER</p>
-                          <h3 className="text-3xl font-bold text-white mt-1">
+                          <p className="text-lg text-slate-900 font-semibold uppercase tracking-wide">ELECTION WINNER</p>
+                          <h3 className="text-3xl font-extrabold text-slate-900 mt-1">
                             {results.winner.name}
                           </h3>
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-8">
+                    <div className="p-8 bg-[#7a4b10] bg-opacity-95">
                       <div className="grid grid-cols-2 gap-6">
                         <div>
                           {results.winner.party && (
-                            <p className="text-sm text-slate-400 uppercase tracking-wide">Party</p>
+                            <p className="text-xs text-yellow-100 uppercase tracking-[0.18em]">Party</p>
                           )}
-                          <p className="mt-2 text-2xl font-bold text-yellow-300">
+                          <p className="mt-2 text-2xl font-bold text-yellow-50">
                             {results.winner.party || "Independent"}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-slate-400 uppercase tracking-wide">Vote Share</p>
+                          <p className="text-xs text-yellow-100 uppercase tracking-[0.18em]">Vote Share</p>
                           <p className="mt-2 text-4xl font-bold text-white">
                             {results.winner.percentage}%
                           </p>
-                          <p className="text-lg text-slate-300 mt-1">
+                          <p className="text-base text-yellow-50 mt-1">
                             {results.winner.votes} votes
                           </p>
                         </div>
                       </div>
 
-                      {/* WINNER PROGRESS BAR */}
                       <div className="mt-8">
-                        <div className="h-4 overflow-hidden rounded-full bg-slate-700">
+                        <div className="h-4 overflow-hidden rounded-full bg-yellow-900/40 border border-yellow-200/30">
                           <div
-                            className="h-full bg-gradient-to- r from-yellow-500 to-yellow-400 transition-all duration-500"
+                            className="h-full bg-gradient-to- r from-yellow-300 to-yellow-500 transition-all duration-500"
                             style={{ width: `${results.winner.percentage}%` }}
                           />
                         </div>

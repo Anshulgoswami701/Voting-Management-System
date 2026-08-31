@@ -132,35 +132,34 @@ function VoterResults() {
           <div className="max-w-5xl mx-auto space-y-6">
             {/* ELECTION INFO & STATS */}
             <div className="rounded-2xl border border-slate-700 bg-slate-800 overflow-hidden">
-              <div className="bg-gradient-to- r from-indigo-600 to-indigo-700 px-8 py-8">
-                <h2 className="text-4xl font-bold text-white mb-2">
+              <div className="bg-gradient-to- r from-indigo-700 to-indigo-800 px-8 py-8">
+                <h2 className="text-3xl font-bold text-white mb-2">
                   {results.election.title}
                 </h2>
-                <p className="text-lg text-indigo-200">
-                  Official Election Results
+                <p className="text-base text-indigo-100">
                 </p>
               </div>
 
               <div className="grid grid-cols-3 gap-6 p-8 border-b border-slate-700">
-                <div className="rounded-xl bg-gradient-to- br from-slate-700 to-slate-800 p-6 text-center">
+                <div className="rounded-xl bg-gradient-to-  br from-slate-800 to-slate-900 p-6 text-center shadow-lg shadow-slate-900/20">
                   <Users size={36} className="mx-auto text-indigo-400 mb-3" />
-                  <p className="text-base text-slate-400 uppercase tracking-wide">Total Votes Cast</p>
+                  <p className="text-base text-slate-300 uppercase tracking-wide">Total Votes Cast</p>
                   <p className="mt-3 text-5xl font-bold text-white">
                     {results.totalVotes}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-gradient-to- br from-slate-700 to-slate-800 p-6 text-center">
+                <div className="rounded-xl bg-gradient-to- br from-slate-800 to-slate-900 p-6 text-center shadow-lg shadow-slate-900/20">
                   <BarChart3 size={36} className="mx-auto text-purple-400 mb-3" />
-                  <p className="text-base text-slate-400 uppercase tracking-wide">Candidates</p>
+                  <p className="text-base text-slate-300 uppercase tracking-wide">Candidates</p>
                   <p className="mt-3 text-5xl font-bold text-white">
                     {results.results.length}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-gradient-to- br from-slate-700 to-slate-800 p-6 text-center">
+                <div className="rounded-xl bg-gradient-to- br from-slate-800 to-slate-900 p-6 text-center shadow-lg shadow-slate-900/20">
                   <TrendingUp size={36} className="mx-auto text-emerald-400 mb-3" />
-                  <p className="text-base text-slate-400 uppercase tracking-wide">Status</p>
+                  <p className="text-base text-slate-300 uppercase tracking-wide">Status</p>
                   <p className="mt-3 text-lg font-bold text-emerald-300 uppercase">
                     Published
                   </p>
@@ -170,46 +169,45 @@ function VoterResults() {
 
             {/* WINNER HIGHLIGHT */}
             {results.winner && (
-              <div className="rounded-2xl border-2 border-yellow-500/50 bg-gradient-to- br from-yellow-900/30 to-yellow-800/20 overflow-hidden">
-                <div className="bg-gradient-to- r from-yellow-600 to-yellow-700 px-8 py-8">
+              <div className="rounded-2xl border-2 border-yellow-400/60 bg-gradient-to- br from-amber-100 via-yellow-200 to-yellow-300 overflow-hidden shadow-xl shadow-yellow-200/40">
+                <div className="bg-gradient-to- r from-yellow-400 to-amber-300 px-8 py-8">
                   <div className="flex items-center gap-4">
-                    <Award size={48} className="text-yellow-300" />
+                    <Award size={40} className="text-slate-900" />
                     <div>
-                      <p className="text-xl text-yellow-200 font-semibold uppercase">🏆 Election Winner</p>
-                      <h3 className="text-4xl font-bold text-white mt-2">
+                      <p className="text-lg text-slate-900 font-semibold uppercase tracking-wide">🏆 Election Winner</p>
+                      <h3 className="text-3xl font-extrabold text-slate-900 mt-2">
                         {results.winner.name}
                       </h3>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-8">
+                <div className="p-8 bg-[#7a4b10] bg-opacity-95">
                   <div className="grid grid-cols-2 gap-8 mb-8">
                     <div>
                       {results.winner.party && (
-                        <p className="text-sm text-slate-400 uppercase tracking-widest">Political Party</p>
+                        <p className="text-xs text-yellow-100 uppercase tracking-[0.18em]">Political Party</p>
                       )}
-                      <p className="mt-2 text-3xl font-bold text-yellow-300">
+                      <p className="mt-2 text-2xl font-bold text-yellow-50">
                         {results.winner.party || "Independent"}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-slate-400 uppercase tracking-widest">Vote Share</p>
-                      <p className="mt-2 text-5xl font-bold text-white">
+                      <p className="text-xs text-yellow-100 uppercase tracking-[0.18em]">Vote Share</p>
+                      <p className="mt-2 text-4xl font-bold text-white">
                         {results.winner.percentage}%
                       </p>
-                      <p className="text-lg text-slate-300 mt-2">
+                      <p className="text-base text-yellow-50 mt-2">
                         {results.winner.votes} votes total
                       </p>
                     </div>
                   </div>
 
-                  {/* WINNER PROGRESS BAR */}
                   <div className="mt-6">
-                    <p className="text-sm text-slate-400 mb-3 uppercase tracking-wide">Vote Distribution</p>
-                    <div className="h-6 overflow-hidden rounded-full bg-slate-700 border-2 border-yellow-500/30">
+                    <p className="text-xs text-yellow-100 mb-3 uppercase tracking-[0.18em]">Vote Distribution</p>
+                    <div className="h-6 overflow-hidden rounded-full bg-yellow-900/40 border border-yellow-200/30">
                       <div
-                        className="h-full bg-gradient-to- r from-yellow-500 to-yellow-400 transition-all duration-700 shadow-lg shadow-yellow-500/50"
+                        className="h-full bg-gradient-to- r from-yellow-300 to-yellow-500 transition-all duration-700 shadow-lg shadow-yellow-500/40"
                         style={{ width: `${results.winner.percentage}%` }}
                       />
                     </div>

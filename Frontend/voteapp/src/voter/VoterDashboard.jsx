@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Info,
   LockKeyhole,
+  BarChart3,
 } from "lucide-react";
 
 import { clearAuthSession, getStoredUser } from "../components/ProtectedRoute";
@@ -21,6 +22,7 @@ function VoterDashboard() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [profileUser, setProfileUser] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [publishedElections, setPublishedElections] = useState([]);
 
   const user = getStoredUser();
 
@@ -57,6 +59,34 @@ function VoterDashboard() {
     };
 
     loadProfile();
+  }, [user]);
+
+  useEffect(() => {
+    const loadPublishedElections = async () => {
+      if (!user) return;
+
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch("http://localhost:5000/api/elections/voter/list", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        setPublishedElections(
+          (data.elections || []).filter(
+            (election) => election.status === "results_published"
+          )
+        );
+      } catch (error) {
+        console.error("Voter dashboard results error:", error);
+      }
+    };
+
+    loadPublishedElections();
   }, [user]);
 
   const currentUser = profileUser || user;
@@ -551,6 +581,37 @@ function VoterDashboard() {
             </div>
           </div>
         </section>
+
+        {publishedElections.length > 0 && (
+          <section className="mb-7 overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-slate-100 bg-indigo-50/60 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Published Election Results</h3>
+                <p className="mt-1 text-sm text-slate-500">Results published by the administrator are available here.</p>
+              </div>
+              <BarChart3 className="text-indigo-600" size={24} />
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {publishedElections.map((election) => (
+                <div key={election._id} className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between md:px-8">
+                  <div>
+                    <h4 className="font-semibold text-slate-900">{election.title}</h4>
+                    <p className="mt-1 text-sm text-slate-500">The final election results are ready to view.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/voter/results/${election._id}`)}
+                    className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                  >
+                    View Results
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* =================================================
             INFORMATION

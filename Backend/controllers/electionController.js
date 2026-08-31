@@ -11,10 +11,24 @@ const updateElectionStatuses = async () => {
   try {
     const now = new Date();
 
+    await Election.updateMany(
+      {
+        resultsPublished: true,
+        status: { $ne: "results_published" },
+      },
+      {
+        $set: {
+          status: "results_published",
+        },
+      }
+    );
+
     // UPCOMING
     await Election.updateMany(
       {
         startDate: { $gt: now },
+        status: { $ne: "results_published" },
+        resultsPublished: { $ne: true },
       },
       {
         $set: {
@@ -28,6 +42,8 @@ const updateElectionStatuses = async () => {
       {
         startDate: { $lte: now },
         endDate: { $gt: now },
+        status: { $ne: "results_published" },
+        resultsPublished: { $ne: true },
       },
       {
         $set: {
@@ -40,6 +56,8 @@ const updateElectionStatuses = async () => {
     await Election.updateMany(
       {
         endDate: { $lte: now },
+        status: { $ne: "results_published" },
+        resultsPublished: { $ne: true },
       },
       {
         $set: {
@@ -421,7 +439,7 @@ const getVoterElectionById = async (
 
     const election =
       await Election.findById(id).select(
-        "title description startDate endDate status"
+        "title description startDate endDate status resultsPublished"
       );
 
     if (!election) {
