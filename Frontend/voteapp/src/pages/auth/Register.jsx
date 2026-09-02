@@ -47,11 +47,14 @@ import {
 } from "lucide-react";
 
 import { clearAuthSession } from "../../components/ProtectedRoute";
+import FaceVerificationCapture from "../../components/FaceVerificationCapture";
 
 function Register() {
   const navigate = useNavigate();
 
   const [role, setRole] = useState("voter");
+  const [faceDescriptor, setFaceDescriptor] = useState(null);
+  const [faceVerificationStatus, setFaceVerificationStatus] = useState("Face verification required before registration.");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -135,6 +138,16 @@ function Register() {
       return;
     }
 
+    const isValidFaceDescriptor = Array.isArray(faceDescriptor)
+      && faceDescriptor.length >= 64
+      && faceDescriptor.length <= 2048
+      && faceDescriptor.every((value) => Number.isFinite(value));
+
+    if (!isValidFaceDescriptor) {
+      toast.error("Face verification is required before registration.");
+      return;
+    }
+
     // ==========================
     // BUILD REQUEST DATA
     // ==========================
@@ -145,6 +158,7 @@ function Register() {
       confirmPassword: formData.confirmPassword,
       role: role,
       termsAccepted,
+      faceEmbedding: faceDescriptor,
     };
 
     // Voter ID only for voter
@@ -156,8 +170,6 @@ function Register() {
     if (role === "admin") {
       registerData.adminCode = formData.adminCode;
     }
-
-    console.log("Register Data:", registerData);
 
     try {
       // ==========================
@@ -177,8 +189,6 @@ function Register() {
       );
 
       const data = await response.json();
-
-      console.log("Register Response:", data);
 
       // ==========================
       // BACKEND ERROR
@@ -202,11 +212,6 @@ function Register() {
 
       toast.success(
         `${accountType} registration successful!`
-      );
-
-      console.log(
-        "Registered User:",
-        data.user
       );
 
       clearAuthSession();
@@ -717,6 +722,24 @@ function Register() {
                     </button>.
                   </p>
 
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-800">Face verification</p>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${faceDescriptor ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                      {faceDescriptor ? "Ready" : "Required"}
+                    </span>
+                  </div>
+
+                  <FaceVerificationCapture
+                    onFaceCaptured={(descriptor) => {
+                      setFaceDescriptor(descriptor);
+                      setFaceVerificationStatus("Face verification complete. A valid descriptor has been captured.");
+                    }}
+                  />
+
+                  <p className="mt-3 text-sm text-slate-600">{faceVerificationStatus}</p>
                 </div>
 
                 {/* SUBMIT */}

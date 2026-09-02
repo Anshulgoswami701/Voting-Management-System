@@ -15,12 +15,19 @@ import {
   Shield,
 } from "lucide-react";
 
+import FaceVerificationCapture from "../../components/FaceVerificationCapture";
 import { persistAuthSession } from "../../components/ProtectedRoute";
 
 function Login() {
   const navigate = useNavigate();
 
   const [role, setRole] = useState("voter");
+  const [verificationToken, setVerificationToken] = useState("");
+  const [faceVerificationRequired, setFaceVerificationRequired] = useState(false);
+  const [faceVerificationStatus, setFaceVerificationStatus] = useState("Face verification required before login completes.");
+  const [capturedFaceDescriptor, setCapturedFaceDescriptor] = useState(null);
+  const [isVerifyingFace, setIsVerifyingFace] = useState(false);
+  const [faceCaptureKey, setFaceCaptureKey] = useState(0);
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -57,8 +64,6 @@ function Login() {
       role: role,
     };
 
-    console.log("Login Data:", loginData);
-
     try {
       // ==========================
       // API REQUEST
@@ -78,7 +83,16 @@ function Login() {
 
       const data = await response.json();
 
-      console.log("Login Response:", data);
+      const requiresFaceVerification =
+        data?.requiresFaceVerification === true || Boolean(data?.verificationToken);
+
+      if (requiresFaceVerification) {
+        setFaceVerificationRequired(true);
+        setVerificationToken(data.verificationToken);
+        setFaceVerificationStatus("Password verified. Please complete face verification to continue.");
+        toast.info("Password verified. Please complete face verification.");
+        return;
+      }
 
       // ==========================
       // LOGIN FAILED
@@ -87,7 +101,16 @@ function Login() {
         toast.error(
           data.message || "Incorrect email or password"
         );
+        setFaceVerificationRequired(false);
+        setVerificationToken("");
+        return;
+      }
 
+      if (response.ok && data?.message === "Face verification is not available for this account.") {
+        setFaceVerificationRequired(false);
+        setVerificationToken("");
+        setFaceVerificationStatus("Face verification is not available for this account.");
+        toast.error("Face verification is not available for this account.");
         return;
       }
 
@@ -103,12 +126,12 @@ function Login() {
       // REDIRECT
       // ==========================
       setTimeout(() => {
-  if (data.user.role === "admin") {
-    navigate("/admin/dashboard");
-  } else if (data.user.role === "voter") {
-    navigate("/voter/dashboard");
-  }
-}, 1200);
+        if (data.user.role === "admin") {
+          navigate("/admin/dashboard");
+        } else if (data.user.role === "voter") {
+          navigate("/voter/dashboard");
+        }
+      }, 1200);
 
     } catch (error) {
       console.error("Login error:", error);
@@ -116,6 +139,69 @@ function Login() {
       toast.error(
         "Unable to connect to server"
       );
+    }
+  };
+
+  const handleFaceVerificationSuccess = async (descriptor) => {
+    if (!verificationToken || !Array.isArray(descriptor)) {
+      toast.error("Face verification is required before login can continue.");
+      return;
+    }
+
+    // Prevent repeated verification attempts
+    if (isVerifyingFace) {
+      toast.warning("Face verification is already in progress. Please wait.");
+      return;
+    }
+
+    setIsVerifyingFace(true);
+    setFaceVerificationStatus("Verifying your face... Please wait.");
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/auth/verify-face",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            verificationToken,
+            faceEmbedding: descriptor,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setIsVerifyingFace(false);
+        setCapturedFaceDescriptor(null);
+        setFaceCaptureKey((currentKey) => currentKey + 1);
+        setFaceVerificationStatus(data.message || "Face verification failed.");
+        toast.error(data.message || "Face verification failed.");
+        return;
+      }
+
+      setIsVerifyingFace(false);
+      persistAuthSession(data.token, data.user);
+      setFaceVerificationStatus("Face verification complete. Redirecting...");
+      toast.success("Login successful!");
+
+      setTimeout(() => {
+        if (data.user.role === "admin") {
+          navigate("/admin/dashboard");
+        } else if (data.user.role === "voter") {
+          navigate("/voter/dashboard");
+        }
+      }, 1200);
+    } catch (error) {
+      console.error("Face verification error:", error);
+      setIsVerifyingFace(false);
+      setCapturedFaceDescriptor(null);
+      setFaceCaptureKey((currentKey) => currentKey + 1);
+      setFaceVerificationStatus("Unable to verify face. Please try again.");
+      toast.error("Unable to verify face. Please try again.");
     }
   };
 
@@ -333,7 +419,7 @@ function Login() {
 
               <form
                 onSubmit={handleSubmit}
-                className="space-y-5"
+                className={`${faceVerificationRequired ? "hidden " : ""}space-y-5`}
               >
 
                 {/* EMAIL */}
@@ -441,19 +527,49 @@ function Login() {
 
                 </div>
 
-                {/* LOGIN BUTTON */}
-
-                <button
-                  type="submit"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition duration-200 shadow-lg shadow-indigo-200"
-                >
-                  Login as{" "}
-                  {role === "voter"
-                    ? "Voter"
-                    : "Admin"}
-                </button>
+                {!faceVerificationRequired && (
+                  <button
+                    type="submit"
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition duration-200 shadow-lg shadow-indigo-200"
+                  >
+                    Login as{" "}
+                    {role === "voter"
+                      ? "Voter"
+                      : "Admin"}
+                  </button>
+                )}
 
               </form>
+
+              {faceVerificationRequired && (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-base font-semibold text-slate-800">Face Verification</p>
+                      <p className="mt-1 text-sm text-slate-600">Position your face inside the frame.</p>
+                    </div>
+                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">
+                      Required
+                    </span>
+                  </div>
+
+                  <FaceVerificationCapture
+                    key={faceCaptureKey}
+                    onFaceCaptured={setCapturedFaceDescriptor}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => handleFaceVerificationSuccess(capturedFaceDescriptor)}
+                    disabled={!capturedFaceDescriptor}
+                    className="mt-4 w-full rounded-xl bg-indigo-600 py-3.5 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    Verify Face
+                  </button>
+
+                  <p className="mt-3 text-sm text-slate-600">{faceVerificationStatus}</p>
+                </div>
+              )}
 
               {/* REGISTER */}
 

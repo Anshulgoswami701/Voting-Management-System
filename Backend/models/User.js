@@ -73,6 +73,12 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    faceEmbedding: {
+      type: [Number],
+      default: null,
+      select: false,
+    },
+
     resetTokenHash: {
       type: String,
       default: null,

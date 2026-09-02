@@ -15,6 +15,50 @@ const isStrongPassword = (password) => {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(password.trim());
 };
 
+const isValidFaceEmbedding = (value) =>
+  Array.isArray(value) &&
+  value.length >= 64 &&
+  value.length <= 2048 &&
+  value.every((entry) => Number.isFinite(entry));
+
+const normalizeEmbedding = (embedding) => {
+  if (!isValidFaceEmbedding(embedding)) return null;
+
+  let magnitude = 0;
+  for (let i = 0; i < embedding.length; i++) {
+    magnitude += embedding[i] * embedding[i];
+  }
+  magnitude = Math.sqrt(magnitude);
+
+  if (magnitude === 0) return null;
+
+  const normalized = new Array(embedding.length);
+  for (let i = 0; i < embedding.length; i++) {
+    normalized[i] = embedding[i] / magnitude;
+  }
+  return normalized;
+};
+
+const getFaceMatchThreshold = () => {
+  const configured = Number.parseFloat(process.env.FACE_MATCH_THRESHOLD || "0.7");
+  return Number.isFinite(configured) ? configured : 0.7;
+};
+
+const computeEuclideanDistance = (left, right) => {
+  if (!isValidFaceEmbedding(left) || !isValidFaceEmbedding(right) || left.length !== right.length) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  let squaredDistance = 0;
+
+  for (let index = 0; index < left.length; index += 1) {
+    const delta = left[index] - right[index];
+    squaredDistance += delta * delta;
+  }
+
+  return Math.sqrt(squaredDistance);
+};
+
 const sanitizeUserResponse = (user) => ({
   id: user._id,
   fullName: user.fullName,
@@ -52,6 +96,7 @@ const register = async (req, res) => {
       adminCode,
       role,
       termsAccepted,
+      faceEmbedding,
     } = req.body;
 
     if (!fullName || !email || !password || !role) {
@@ -89,6 +134,19 @@ const register = async (req, res) => {
     if (termsAccepted !== true && termsAccepted !== "true") {
       return res.status(400).json({
         message: "You must accept the Terms & Conditions and Privacy Policy before registering.",
+      });
+    }
+
+    if (!isValidFaceEmbedding(faceEmbedding)) {
+      return res.status(400).json({
+        message: "Face verification is required before registration.",
+      });
+    }
+
+    const normalizedFaceEmbedding = normalizeEmbedding(faceEmbedding);
+    if (!normalizedFaceEmbedding) {
+      return res.status(400).json({
+        message: "Face verification processing failed. Please try again.",
       });
     }
 
@@ -144,6 +202,7 @@ const register = async (req, res) => {
       status: "active",
       termsAccepted: true,
       acceptedAt: new Date(),
+      faceEmbedding: normalizedFaceEmbedding,
     });
 
     return res.status(201).json({
@@ -193,7 +252,7 @@ const login = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email: normalizedEmail }).select("+faceEmbedding");
 
     if (!user) {
       return res.status(401).json({
@@ -221,6 +280,127 @@ const login = async (req, res) => {
       });
     }
 
+    if (!user.faceEmbedding || !isValidFaceEmbedding(user.faceEmbedding)) {
+      return res.status(403).json({
+        message: "Face verification is not available for this account.",
+      });
+    }
+
+    const verificationToken = jwt.sign(
+      {
+        userId: user._id,
+        role: user.role,
+        type: "face-verification",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: Number(process.env.FACE_VERIFICATION_TTL_SECONDS || 120) }
+    );
+
+    return res.status(200).json({
+      message: "Password verified. Please complete face verification to continue.",
+      requiresFaceVerification: true,
+      verificationToken,
+      user: sanitizeUserResponse(user),
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+
+    return res.status(500).json({
+      message: "Server error during login.",
+    });
+  }
+};
+
+const verifyFaceLogin = async (req, res) => {
+  try {
+    const { verificationToken, faceEmbedding } = req.body;
+
+    if (!verificationToken) {
+      return res.status(401).json({
+        message: "Face verification session is missing or expired.",
+      });
+    }
+
+    if (!isValidFaceEmbedding(faceEmbedding)) {
+      return res.status(400).json({
+        message: "A valid face descriptor is required for verification.",
+      });
+    }
+
+    let decodedToken;
+
+    try {
+      decodedToken = jwt.verify(verificationToken, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({
+        message: "Face verification session is expired or invalid.",
+      });
+    }
+
+    if (decodedToken.type !== "face-verification") {
+      return res.status(401).json({
+        message: "Face verification session is invalid.",
+      });
+    }
+
+    const user = await User.findById(decodedToken.userId).select("+faceEmbedding fullName email voterId role status hasVoted");
+
+    if (!user) {
+      return res.status(401).json({
+        message: "Face verification session is invalid.",
+      });
+    }
+
+    if (!user.faceEmbedding || !isValidFaceEmbedding(user.faceEmbedding)) {
+      return res.status(403).json({
+        message: "This account does not have a registered face profile.",
+      });
+    }
+
+    // Normalize the login embedding
+    const normalizedLoginEmbedding = normalizeEmbedding(faceEmbedding);
+    if (!normalizedLoginEmbedding) {
+      console.log("Face verification - Normalization failed:", {
+        userId: String(decodedToken.userId),
+        receivedEmbeddingLength: faceEmbedding.length,
+      });
+      return res.status(400).json({
+        message: "Face verification processing failed. Please try again.",
+      });
+    }
+
+    // Normalize stored embedding for comparison
+    const normalizedStoredEmbedding = normalizeEmbedding(user.faceEmbedding);
+    if (!normalizedStoredEmbedding) {
+      console.log("Face verification - Stored embedding normalization failed:", {
+        userId: String(decodedToken.userId),
+      });
+      return res.status(500).json({
+        message: "Face verification processing failed. Please try again.",
+      });
+    }
+
+    const distance = computeEuclideanDistance(normalizedLoginEmbedding, normalizedStoredEmbedding);
+    const threshold = getFaceMatchThreshold();
+    const comparisonPassed = Number.isFinite(distance) && distance <= threshold;
+
+    if (process.env.FACE_VERIFICATION_DEBUG === "true") {
+      console.log("Face verification attempt:", {
+        userId: String(decodedToken.userId),
+        storedEmbeddingLength: user.faceEmbedding.length,
+        loginEmbeddingLength: faceEmbedding.length,
+        distance: Number.isFinite(distance) ? Number(distance.toFixed(6)) : null,
+        threshold: Number(threshold.toFixed(2)),
+        result: comparisonPassed ? "ACCEPTED" : "REJECTED",
+      });
+    }
+
+    if (!comparisonPassed) {
+      return res.status(403).json({
+        message: "Face verification failed. Please try again with a matching face.",
+      });
+    }
+
     const token = jwt.sign(
       {
         userId: user._id,
@@ -236,10 +416,10 @@ const login = async (req, res) => {
       user: sanitizeUserResponse(user),
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Face verification error:", error.message || error);
 
     return res.status(500).json({
-      message: "Server error during login.",
+      message: "Unable to verify face. Please try again.",
     });
   }
 };
@@ -352,6 +532,7 @@ const resetPassword = async (req, res) => {
 module.exports = {
   register,
   login,
+  verifyFaceLogin,
   forgotPassword,
   resetPassword,
 };

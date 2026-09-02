@@ -3,6 +3,7 @@ const express = require("express");
 const {
   register,
   login,
+  verifyFaceLogin,
   forgotPassword,
   resetPassword,
 } = require("../controllers/authController");
@@ -14,6 +15,9 @@ router.post("/register", register);
 
 // Login
 router.post("/login", login);
+
+// Face verification for login
+router.post("/verify-face", verifyFaceLogin);
 
 // Forgot password
 router.post("/forgot-password", forgotPassword);

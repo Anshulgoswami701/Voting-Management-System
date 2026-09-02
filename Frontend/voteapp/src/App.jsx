@@ -27,12 +27,15 @@ import VoterHistory from "./voter/VoterHistory";
 import VoterProfile from "./voter/VoterProfile";
 import VoterResults from "./voter/VoterResults";
 import ProtectedRoute from "./components/ProtectedRoute";
+import FaceVerificationTestPage from "./pages/auth/FaceVerificationTestPage";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
+
+        <Route path="/face-verification-test" element={<FaceVerificationTestPage />} />
 
         <Route path="/login" element={<Login />} />
 
