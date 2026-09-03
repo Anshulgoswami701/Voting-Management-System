@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,7 +55,11 @@ function Register() {
   const [role, setRole] = useState("voter");
   const [faceDescriptor, setFaceDescriptor] = useState(null);
   const [livenessEvidence, setLivenessEvidence] = useState(null);
+  const [faceCaptureKey, setFaceCaptureKey] = useState(0);
   const [faceVerificationStatus, setFaceVerificationStatus] = useState("Face verification required before registration.");
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isFaceVerificationRunning, setIsFaceVerificationRunning] = useState(true);
+  const registrationInFlightRef = useRef(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -109,6 +113,8 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isRegistering || registrationInFlightRef.current) return;
+
     if (!formData.fullName.trim()) {
       toast.error("Please enter your full name.");
       return;
@@ -149,6 +155,9 @@ function Register() {
       return;
     }
 
+    registrationInFlightRef.current = true;
+    setIsRegistering(true);
+
     // ==========================
     // BUILD REQUEST DATA
     // ==========================
@@ -160,7 +169,6 @@ function Register() {
       role: role,
       termsAccepted,
       faceEmbedding: faceDescriptor,
-      livenessEvidence,
     };
 
     // Voter ID only for voter
@@ -174,6 +182,26 @@ function Register() {
     }
 
     try {
+      const challengeResponse = await fetch("http://localhost:5000/api/auth/pad-challenge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const challengeData = await challengeResponse.json();
+      const padResponse = await fetch("http://localhost:5000/api/auth/verify-pad", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeToken: challengeData.challengeToken, frames: livenessEvidence }),
+      });
+      const padData = await padResponse.json();
+      if (!padResponse.ok || padData.antiSpoofPassed !== true) {
+        setFaceDescriptor(null);
+        setLivenessEvidence(null);
+        setFaceCaptureKey((currentKey) => currentKey + 1);
+        toast.error(padData.message || "Server-side anti-spoof verification failed.");
+        return;
+      }
+
+      registerData.padToken = challengeData.challengeToken;
       // ==========================
       // API REQUEST
       // ==========================
@@ -231,6 +259,9 @@ function Register() {
       toast.error(
         "Unable to connect to server. Please try again."
       );
+    } finally {
+      registrationInFlightRef.current = false;
+      setIsRegistering(false);
     }
   };
 
@@ -735,6 +766,10 @@ function Register() {
                   </div>
 
                   <FaceVerificationCapture
+                    key={faceCaptureKey}
+                    onCaptureStateChange={(captureState) => {
+                      setIsFaceVerificationRunning(!["descriptor-generated", "descriptor-error", "webcam-error", "model-error"].includes(captureState));
+                    }}
                     onFaceCaptured={(descriptor, evidence) => {
                       setFaceDescriptor(descriptor);
                       setLivenessEvidence(evidence);
@@ -749,7 +784,8 @@ function Register() {
 
                 <button
                   type="submit"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition duration-200 shadow-lg shadow-indigo-200"
+                  disabled={isRegistering || isFaceVerificationRunning}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition duration-200 shadow-lg shadow-indigo-200 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:opacity-70 disabled:hover:bg-slate-300"
                 >
                   Create{" "}
                   {role === "voter"

@@ -3,8 +3,10 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { sendPasswordResetEmail } = require("../services/emailService");
+const { runServerPad } = require("../services/padService");
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const padStates = new Map();
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
@@ -153,6 +155,37 @@ const sendResetEmail = async (user, token) => {
   }
 };
 
+const createPadChallenge = (type = "registration-pad") => {
+  const jti = crypto.randomUUID();
+  const token = jwt.sign({ type, jti }, process.env.JWT_SECRET, { expiresIn: "90s" });
+  padStates.set(jti, { type, passed: false, expiresAt: Date.now() + 90 * 1000 });
+  return token;
+};
+
+const verifyPad = async (req, res) => {
+  try {
+    const { challengeToken, frames } = req.body;
+    const decoded = jwt.verify(challengeToken, process.env.JWT_SECRET);
+    const state = padStates.get(decoded.jti);
+    if (!state || state.passed || state.expiresAt < Date.now() || state.type !== decoded.type) {
+      return res.status(401).json({ message: "PAD challenge is missing, expired, or already used." });
+    }
+
+    const frameImages = Array.isArray(frames) ? frames.map((frame) => frame?.image) : [];
+    const result = await runServerPad(frameImages);
+    if (!result.passed) {
+      padStates.delete(decoded.jti);
+      return res.status(403).json({ message: "Server-side anti-spoof verification failed.", antiSpoofPassed: false });
+    }
+
+    state.passed = true;
+    state.passedAt = Date.now();
+    return res.status(200).json({ message: "Server-side anti-spoof verification passed.", antiSpoofPassed: true });
+  } catch (error) {
+    return res.status(401).json({ message: "PAD challenge is invalid or expired." });
+  }
+};
+
 const register = async (req, res) => {
   try {
     const {
@@ -165,7 +198,7 @@ const register = async (req, res) => {
       role,
       termsAccepted,
       faceEmbedding,
-      livenessEvidence,
+      padToken,
     } = req.body;
 
     if (!fullName || !email || !password || !role) {
@@ -212,13 +245,17 @@ const register = async (req, res) => {
       });
     }
 
-    const liveness = validateLivenessEvidence(livenessEvidence);
-    if (!liveness.passed) {
-      return res.status(403).json({
-        message: `Face anti-spoof verification failed. ${liveness.reason}`,
-        antiSpoofPassed: false,
-      });
+    let decodedPadToken;
+    try {
+      decodedPadToken = jwt.verify(padToken, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(403).json({ message: "Server-side anti-spoof verification is required." });
     }
+    const padState = padStates.get(decodedPadToken.jti);
+    if (!padState || !padState.passed || padState.type !== "registration-pad" || padState.expiresAt < Date.now()) {
+      return res.status(403).json({ message: "Server-side anti-spoof verification is required." });
+    }
+    padStates.delete(decodedPadToken.jti);
 
     const normalizedFaceEmbedding = normalizeEmbedding(faceEmbedding);
     if (!normalizedFaceEmbedding) {
@@ -363,11 +400,18 @@ const login = async (req, res) => {
       });
     }
 
+    const verificationJti = crypto.randomUUID();
+    padStates.set(verificationJti, {
+      type: "face-verification",
+      passed: false,
+      expiresAt: Date.now() + Number(process.env.FACE_VERIFICATION_TTL_SECONDS || 120) * 1000,
+    });
     const verificationToken = jwt.sign(
       {
         userId: user._id,
         role: user.role,
         type: "face-verification",
+        jti: verificationJti,
       },
       process.env.JWT_SECRET,
       { expiresIn: Number(process.env.FACE_VERIFICATION_TTL_SECONDS || 120) }
@@ -390,7 +434,7 @@ const login = async (req, res) => {
 
 const verifyFaceLogin = async (req, res) => {
   try {
-    const { verificationToken, faceEmbedding, livenessEvidence } = req.body;
+    const { verificationToken, faceEmbedding } = req.body;
 
     if (!verificationToken) {
       return res.status(401).json({
@@ -401,14 +445,6 @@ const verifyFaceLogin = async (req, res) => {
     if (!isValidFaceEmbedding(faceEmbedding)) {
       return res.status(400).json({
         message: "A valid face descriptor is required for verification.",
-      });
-    }
-
-    const liveness = validateLivenessEvidence(livenessEvidence);
-    if (!liveness.passed) {
-      return res.status(403).json({
-        message: `Face anti-spoof verification failed. ${liveness.reason}`,
-        antiSpoofPassed: false,
       });
     }
 
@@ -427,6 +463,12 @@ const verifyFaceLogin = async (req, res) => {
         message: "Face verification session is invalid.",
       });
     }
+
+    const padState = padStates.get(decodedToken.jti);
+    if (!padState || !padState.passed || padState.expiresAt < Date.now()) {
+      return res.status(403).json({ message: "Server-side anti-spoof verification is required.", antiSpoofPassed: false });
+    }
+    padStates.delete(decodedToken.jti);
 
     const user = await User.findById(decodedToken.userId).select("+faceEmbedding fullName email voterId role status hasVoted");
 
@@ -468,7 +510,6 @@ const verifyFaceLogin = async (req, res) => {
     const evaluation = evaluateFaceVerification({
       storedEmbedding: user.faceEmbedding,
       faceEmbedding,
-      livenessEvidence,
     });
     const { distance, threshold, comparisonPassed } = evaluation;
 
@@ -479,7 +520,7 @@ const verifyFaceLogin = async (req, res) => {
         loginEmbeddingLength: faceEmbedding.length,
         distance: Number.isFinite(distance) ? Number(distance.toFixed(6)) : null,
         threshold: Number(threshold.toFixed(2)),
-        antiSpoofPassed: liveness.passed,
+        antiSpoofPassed: true,
         result: comparisonPassed ? "ACCEPTED" : "REJECTED",
       });
     }
@@ -624,6 +665,8 @@ module.exports = {
   verifyFaceLogin,
   forgotPassword,
   resetPassword,
+  createPadChallenge,
+  verifyPad,
   validateLivenessEvidence,
   evaluateFaceVerification,
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { ToastContainer, toast } from "react-toastify";
@@ -29,6 +29,7 @@ function Login() {
   const [livenessEvidence, setLivenessEvidence] = useState(null);
   const [isVerifyingFace, setIsVerifyingFace] = useState(false);
   const [faceCaptureKey, setFaceCaptureKey] = useState(0);
+  const verificationInFlightRef = useRef(false);
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -90,6 +91,9 @@ function Login() {
       if (requiresFaceVerification) {
         setFaceVerificationRequired(true);
         setVerificationToken(data.verificationToken);
+        setCapturedFaceDescriptor(null);
+        setLivenessEvidence(null);
+        setFaceCaptureKey((currentKey) => currentKey + 1);
         setFaceVerificationStatus("Password verified. Please complete face verification to continue.");
         toast.info("Password verified. Please complete face verification.");
         return;
@@ -150,15 +154,35 @@ function Login() {
     }
 
     // Prevent repeated verification attempts
-    if (isVerifyingFace) {
+    if (isVerifyingFace || verificationInFlightRef.current) {
       toast.warning("Face verification is already in progress. Please wait.");
       return;
     }
 
+    verificationInFlightRef.current = true;
     setIsVerifyingFace(true);
     setFaceVerificationStatus("Verifying your face... Please wait.");
 
     try {
+      const padResponse = await fetch("http://localhost:5000/api/auth/verify-pad", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeToken: verificationToken, frames: livenessEvidence }),
+      });
+      const padData = await padResponse.json();
+      if (!padResponse.ok || padData.antiSpoofPassed !== true) {
+        setIsVerifyingFace(false);
+        verificationInFlightRef.current = false;
+        setFaceVerificationRequired(false);
+        setVerificationToken("");
+        setCapturedFaceDescriptor(null);
+        setLivenessEvidence(null);
+        setFaceCaptureKey((currentKey) => currentKey + 1);
+        setFaceVerificationStatus(padData.message || "Server-side anti-spoof verification failed.");
+        toast.error(padData.message || "Server-side anti-spoof verification failed.");
+        return;
+      }
+
       const response = await fetch(
         "http://localhost:5000/api/auth/verify-face",
         {
@@ -169,7 +193,6 @@ function Login() {
           body: JSON.stringify({
             verificationToken,
             faceEmbedding: descriptor,
-            livenessEvidence,
           }),
         }
       );
@@ -178,7 +201,11 @@ function Login() {
 
       if (!response.ok) {
         setIsVerifyingFace(false);
+        verificationInFlightRef.current = false;
+        setFaceVerificationRequired(false);
+        setVerificationToken("");
         setCapturedFaceDescriptor(null);
+        setLivenessEvidence(null);
         setFaceCaptureKey((currentKey) => currentKey + 1);
         setFaceVerificationStatus(data.message || "Face verification failed.");
         toast.error(data.message || "Face verification failed.");
@@ -186,6 +213,7 @@ function Login() {
       }
 
       setIsVerifyingFace(false);
+      verificationInFlightRef.current = false;
       persistAuthSession(data.token, data.user);
       setFaceVerificationStatus("Face verification complete. Redirecting...");
       toast.success("Login successful!");
@@ -200,7 +228,11 @@ function Login() {
     } catch (error) {
       console.error("Face verification error:", error);
       setIsVerifyingFace(false);
+      verificationInFlightRef.current = false;
+      setFaceVerificationRequired(false);
+      setVerificationToken("");
       setCapturedFaceDescriptor(null);
+      setLivenessEvidence(null);
       setFaceCaptureKey((currentKey) => currentKey + 1);
       setFaceVerificationStatus("Unable to verify face. Please try again.");
       toast.error("Unable to verify face. Please try again.");
@@ -566,7 +598,7 @@ function Login() {
                   <button
                     type="button"
                     onClick={() => handleFaceVerificationSuccess(capturedFaceDescriptor)}
-                    disabled={!capturedFaceDescriptor}
+                    disabled={!capturedFaceDescriptor || isVerifyingFace}
                     className="mt-4 w-full rounded-xl bg-indigo-600 py-3.5 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     Verify Face

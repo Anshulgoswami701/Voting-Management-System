@@ -6,12 +6,20 @@ const {
   verifyFaceLogin,
   forgotPassword,
   resetPassword,
+  createPadChallenge,
+  verifyPad,
 } = require("../controllers/authController");
 
 const router = express.Router();
 
 // Register
 router.post("/register", register);
+
+router.post("/pad-challenge", (req, res) => {
+  res.status(200).json({ challengeToken: createPadChallenge("registration-pad") });
+});
+
+router.post("/verify-pad", verifyPad);
 
 // Login
 router.post("/login", login);

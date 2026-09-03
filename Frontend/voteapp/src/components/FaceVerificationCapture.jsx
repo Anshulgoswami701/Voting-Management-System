@@ -123,8 +123,12 @@ const getFaceStatus = (state, faceCount = 0, failureReason = "") => {
   }
 };
 
-function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
+function FaceVerificationCapture({ onFaceCaptured = () => {}, onCaptureStateChange = () => {} }) {
   const videoRef = useRef(null);
+  const onFaceCapturedRef = useRef(onFaceCaptured);
+  onFaceCapturedRef.current = onFaceCaptured;
+  const onCaptureStateChangeRef = useRef(onCaptureStateChange);
+  onCaptureStateChangeRef.current = onCaptureStateChange;
   const canvasRef = useRef(null);
   const humanRef = useRef(null);
   const animationFrameRef = useRef(null);
@@ -132,6 +136,7 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
   const capturedFramesRef = useRef([]);
   const livenessFramesRef = useRef([]);
   const lastCapturedAtRef = useRef(0);
+  const frameCanvasRef = useRef(null);
   const REQUIRED_FRAMES = 8;
 
   const [status, setStatus] = useState(getFaceStatus("camera-loading"));
@@ -140,6 +145,10 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
   const [failureReason, setFailureReason] = useState("");
   const [descriptor, setDescriptor] = useState(null);
   const [framesCollected, setFramesCollected] = useState(0);
+
+  useEffect(() => {
+    onCaptureStateChangeRef.current(captureState);
+  }, [captureState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,6 +208,14 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
         canvas.width = human.webcam.width || 640;
         canvas.height = human.webcam.height || 480;
 
+        const resetAttempt = () => {
+          capturedFramesRef.current = [];
+          livenessFramesRef.current = [];
+          lastCapturedAtRef.current = 0;
+          setFramesCollected(0);
+          setDescriptor(null);
+        };
+
         const processFrame = async () => {
           if (cancelled || !video || !canvas) {
             return;
@@ -215,16 +232,19 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
               const face = detectedFaces[0];
 
               if (currentFaceCount === 0) {
+                if (capturedFramesRef.current.length > 0) resetAttempt();
                 setCaptureState("no-face");
                 setFailureReason("");
                 setStatus(getFaceStatus("no-face", 0));
                 captureLockRef.current = false;
               } else if (currentFaceCount > 1) {
+                resetAttempt();
                 setCaptureState("multiple-faces");
                 setFailureReason("");
                 setStatus(getFaceStatus("multiple-faces", currentFaceCount));
                 captureLockRef.current = false;
               } else if (!face || !face.box) {
+                resetAttempt();
                 setCaptureState("face-detection-error");
                 setFailureReason("Unable to read face data from the current frame.");
                 setStatus(getFaceStatus("face-detection-error", 1, "Unable to read face data from the current frame."));
@@ -244,7 +264,6 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
                 const hasUsableFaceScore = Number.isFinite(faceConfidence) && faceConfidence > 0;
                 const descriptorCandidate = Array.isArray(face.embedding) ? face.embedding : [];
                 const hasValidDescriptor = isValidDescriptor(descriptorCandidate);
-
                 if (isFaceTooSmall) {
                   setCaptureState("face-too-small");
                   setFailureReason("");
@@ -265,7 +284,6 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
                   setFailureReason("");
                   setStatus(getFaceStatus("face-ready", 1));
                 } else if (!captureLockRef.current && performance.now() - lastCapturedAtRef.current >= 80) {
-                  // Frame is valid - add to collection
                   const validDescriptor = descriptorCandidate.filter((value) => Number.isFinite(value));
 
                   if (!isValidDescriptor(validDescriptor)) {
@@ -276,7 +294,20 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
                   }
 
                   capturedFramesRef.current.push(validDescriptor);
-                  livenessFramesRef.current.push(getLivenessFrame(face, Date.now()));
+                  if (capturedFramesRef.current.length > REQUIRED_FRAMES) {
+                    capturedFramesRef.current.shift();
+                  }
+                  if (!frameCanvasRef.current) frameCanvasRef.current = document.createElement("canvas");
+                  frameCanvasRef.current.width = 320;
+                  frameCanvasRef.current.height = 240;
+                  frameCanvasRef.current.getContext("2d").drawImage(video, 0, 0, 320, 240);
+                  livenessFramesRef.current.push({
+                    ...getLivenessFrame(face, Date.now()),
+                    image: frameCanvasRef.current.toDataURL("image/jpeg", 0.6),
+                  });
+                  if (livenessFramesRef.current.length > 12) {
+                    livenessFramesRef.current.shift();
+                  }
                   lastCapturedAtRef.current = performance.now();
                   const newCount = capturedFramesRef.current.length;
                   setFramesCollected(newCount);
@@ -310,7 +341,7 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
                         setCaptureState("descriptor-generated");
                         setFailureReason("");
                         setStatus(getFaceStatus("descriptor-generated", 1));
-                        onFaceCaptured(averagedDescriptor, livenessFramesRef.current.slice());
+                        onFaceCapturedRef.current(averagedDescriptor, livenessFramesRef.current.slice());
                       }
                     }, 150);
                   }
@@ -362,7 +393,7 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
 
       stopCamera();
     };
-  }, [onFaceCaptured]);
+  }, []);
 
   return (
     <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -384,7 +415,7 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
           autoPlay
           muted
           playsInline
-          className="block h-[360px] w-full object-cover"
+          className="block h-90 w-full object-cover"
         />
         <canvas
           ref={canvasRef}
