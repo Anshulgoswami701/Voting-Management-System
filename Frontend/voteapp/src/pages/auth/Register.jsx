@@ -54,6 +54,7 @@ function Register() {
 
   const [role, setRole] = useState("voter");
   const [faceDescriptor, setFaceDescriptor] = useState(null);
+  const [livenessEvidence, setLivenessEvidence] = useState(null);
   const [faceVerificationStatus, setFaceVerificationStatus] = useState("Face verification required before registration.");
 
   const [showPassword, setShowPassword] = useState(false);
@@ -159,6 +160,7 @@ function Register() {
       role: role,
       termsAccepted,
       faceEmbedding: faceDescriptor,
+      livenessEvidence,
     };
 
     // Voter ID only for voter
@@ -733,8 +735,9 @@ function Register() {
                   </div>
 
                   <FaceVerificationCapture
-                    onFaceCaptured={(descriptor) => {
+                    onFaceCaptured={(descriptor, evidence) => {
                       setFaceDescriptor(descriptor);
+                      setLivenessEvidence(evidence);
                       setFaceVerificationStatus("Face verification complete. A valid descriptor has been captured.");
                     }}
                   />

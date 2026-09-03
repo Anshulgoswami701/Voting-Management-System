@@ -59,6 +59,74 @@ const computeEuclideanDistance = (left, right) => {
   return Math.sqrt(squaredDistance);
 };
 
+const validateLivenessEvidence = (evidence) => {
+  if (!Array.isArray(evidence) || evidence.length < 6 || evidence.length > 20) {
+    return { passed: false, reason: "A complete multi-frame liveness sequence is required." };
+  }
+
+  const frames = evidence.filter((frame) => {
+    return frame && Number.isFinite(frame.capturedAt)
+      && Array.isArray(frame.box) && frame.box.length === 4
+      && Array.isArray(frame.landmarks) && frame.landmarks.length === 6
+      && Number.isFinite(frame.real) && Number.isFinite(frame.live);
+  });
+
+  if (frames.length !== evidence.length) {
+    return { passed: false, reason: "Liveness evidence is incomplete or invalid." };
+  }
+
+  for (let index = 1; index < frames.length; index += 1) {
+    if (frames[index].capturedAt <= frames[index - 1].capturedAt) {
+      return { passed: false, reason: "Liveness frames must be captured in sequence." };
+    }
+  }
+
+  const duration = frames[frames.length - 1].capturedAt - frames[0].capturedAt;
+  const averageReal = frames.reduce((sum, frame) => sum + frame.real, 0) / frames.length;
+  const averageLive = frames.reduce((sum, frame) => sum + frame.live, 0) / frames.length;
+  const temporalVariation = (values) => Math.max(...values) - Math.min(...values);
+  const boxVariation = Math.max(...[0, 1, 2, 3].map((coordinate) => temporalVariation(
+    frames.map((frame) => frame.box[coordinate]),
+  )));
+  const landmarkVariation = Math.max(...[0, 1, 2, 3, 4, 5].flatMap((point) => [0, 1, 2].map((coordinate) => temporalVariation(
+    frames.map((frame) => frame.landmarks[point][coordinate]),
+  ))));
+
+  const passed = duration >= 400
+    && averageReal >= 0.5
+    && averageLive >= 0.5
+    && (boxVariation >= 0.001 || landmarkVariation >= 0.001);
+
+  return {
+    passed,
+    reason: passed ? "" : "The camera could not confirm a live, continuously observed face.",
+    frameCount: frames.length,
+    duration,
+    averageReal,
+    averageLive,
+    boxVariation,
+    landmarkVariation,
+  };
+};
+
+const evaluateFaceVerification = ({ storedEmbedding, faceEmbedding, livenessEvidence }) => {
+  const liveness = validateLivenessEvidence(livenessEvidence);
+  const normalizedStoredEmbedding = normalizeEmbedding(storedEmbedding);
+  const normalizedLoginEmbedding = normalizeEmbedding(faceEmbedding);
+  const distance = normalizedStoredEmbedding && normalizedLoginEmbedding
+    ? computeEuclideanDistance(normalizedLoginEmbedding, normalizedStoredEmbedding)
+    : Number.POSITIVE_INFINITY;
+  const threshold = getFaceMatchThreshold();
+
+  return {
+    liveness,
+    distance,
+    threshold,
+    comparisonPassed: Number.isFinite(distance) && distance <= threshold,
+    passed: liveness.passed && Number.isFinite(distance) && distance <= threshold,
+  };
+};
+
 const sanitizeUserResponse = (user) => ({
   id: user._id,
   fullName: user.fullName,
@@ -97,6 +165,7 @@ const register = async (req, res) => {
       role,
       termsAccepted,
       faceEmbedding,
+      livenessEvidence,
     } = req.body;
 
     if (!fullName || !email || !password || !role) {
@@ -140,6 +209,14 @@ const register = async (req, res) => {
     if (!isValidFaceEmbedding(faceEmbedding)) {
       return res.status(400).json({
         message: "Face verification is required before registration.",
+      });
+    }
+
+    const liveness = validateLivenessEvidence(livenessEvidence);
+    if (!liveness.passed) {
+      return res.status(403).json({
+        message: `Face anti-spoof verification failed. ${liveness.reason}`,
+        antiSpoofPassed: false,
       });
     }
 
@@ -313,7 +390,7 @@ const login = async (req, res) => {
 
 const verifyFaceLogin = async (req, res) => {
   try {
-    const { verificationToken, faceEmbedding } = req.body;
+    const { verificationToken, faceEmbedding, livenessEvidence } = req.body;
 
     if (!verificationToken) {
       return res.status(401).json({
@@ -324,6 +401,14 @@ const verifyFaceLogin = async (req, res) => {
     if (!isValidFaceEmbedding(faceEmbedding)) {
       return res.status(400).json({
         message: "A valid face descriptor is required for verification.",
+      });
+    }
+
+    const liveness = validateLivenessEvidence(livenessEvidence);
+    if (!liveness.passed) {
+      return res.status(403).json({
+        message: `Face anti-spoof verification failed. ${liveness.reason}`,
+        antiSpoofPassed: false,
       });
     }
 
@@ -380,9 +465,12 @@ const verifyFaceLogin = async (req, res) => {
       });
     }
 
-    const distance = computeEuclideanDistance(normalizedLoginEmbedding, normalizedStoredEmbedding);
-    const threshold = getFaceMatchThreshold();
-    const comparisonPassed = Number.isFinite(distance) && distance <= threshold;
+    const evaluation = evaluateFaceVerification({
+      storedEmbedding: user.faceEmbedding,
+      faceEmbedding,
+      livenessEvidence,
+    });
+    const { distance, threshold, comparisonPassed } = evaluation;
 
     if (process.env.FACE_VERIFICATION_DEBUG === "true") {
       console.log("Face verification attempt:", {
@@ -391,6 +479,7 @@ const verifyFaceLogin = async (req, res) => {
         loginEmbeddingLength: faceEmbedding.length,
         distance: Number.isFinite(distance) ? Number(distance.toFixed(6)) : null,
         threshold: Number(threshold.toFixed(2)),
+        antiSpoofPassed: liveness.passed,
         result: comparisonPassed ? "ACCEPTED" : "REJECTED",
       });
     }
@@ -535,4 +624,6 @@ module.exports = {
   verifyFaceLogin,
   forgotPassword,
   resetPassword,
+  validateLivenessEvidence,
+  evaluateFaceVerification,
 };

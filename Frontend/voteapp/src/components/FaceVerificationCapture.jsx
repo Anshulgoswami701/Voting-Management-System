@@ -12,20 +12,20 @@ const humanConfig = {
   face: {
     enabled: true,
     detector: {
-      rotation: false,
+       rotation: true,
       maxDetected: 1,
       minConfidence: 0.2,
       minSize: 120,
       scale: 1.2,
       iouThreshold: 0.2,
     },
-    mesh: { enabled: false },
+    mesh: { enabled: true },
     attention: { enabled: false },
     iris: { enabled: false },
     description: { enabled: true, minConfidence: 0.2 },
     emotion: { enabled: false },
-    antispoof: { enabled: false },
-    liveness: { enabled: false },
+    antispoof: { enabled: true, skipFrames: 0, skipTime: 0 },
+    liveness: { enabled: true, skipFrames: 0, skipTime: 0 },
   },
   body: { enabled: false },
   hand: { enabled: false },
@@ -76,6 +76,18 @@ const averageEmbeddings = (embeddings) => {
   return normalizeEmbedding(averaged);
 };
 
+const getLivenessFrame = (face, capturedAt) => ({
+  capturedAt,
+  box: Array.isArray(face.boxRaw) ? face.boxRaw.slice(0, 4) : [],
+  landmarks: [10, 152, 33, 263, 13, 14].map((index) => {
+    const point = Array.isArray(face.meshRaw?.[index]) ? face.meshRaw[index] : [];
+    return point.slice(0, 3);
+  }),
+  pose: face.rotation?.angle || null,
+  real: Number.isFinite(face.real) ? face.real : null,
+  live: Number.isFinite(face.live) ? face.live : null,
+});
+
 const getFaceStatus = (state, faceCount = 0, failureReason = "") => {
   switch (state) {
     case "camera-loading":
@@ -118,6 +130,8 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
   const animationFrameRef = useRef(null);
   const captureLockRef = useRef(false);
   const capturedFramesRef = useRef([]);
+  const livenessFramesRef = useRef([]);
+  const lastCapturedAtRef = useRef(0);
   const REQUIRED_FRAMES = 8;
 
   const [status, setStatus] = useState(getFaceStatus("camera-loading"));
@@ -250,7 +264,7 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
                   setCaptureState("face-ready");
                   setFailureReason("");
                   setStatus(getFaceStatus("face-ready", 1));
-                } else if (!captureLockRef.current) {
+                } else if (!captureLockRef.current && performance.now() - lastCapturedAtRef.current >= 80) {
                   // Frame is valid - add to collection
                   const validDescriptor = descriptorCandidate.filter((value) => Number.isFinite(value));
 
@@ -262,6 +276,8 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
                   }
 
                   capturedFramesRef.current.push(validDescriptor);
+                  livenessFramesRef.current.push(getLivenessFrame(face, Date.now()));
+                  lastCapturedAtRef.current = performance.now();
                   const newCount = capturedFramesRef.current.length;
                   setFramesCollected(newCount);
 
@@ -294,7 +310,7 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
                         setCaptureState("descriptor-generated");
                         setFailureReason("");
                         setStatus(getFaceStatus("descriptor-generated", 1));
-                        onFaceCaptured(averagedDescriptor);
+                        onFaceCaptured(averagedDescriptor, livenessFramesRef.current.slice());
                       }
                     }, 150);
                   }
@@ -337,6 +353,8 @@ function FaceVerificationCapture({ onFaceCaptured = () => {} }) {
       cancelled = true;
       captureLockRef.current = false;
       capturedFramesRef.current = [];
+      livenessFramesRef.current = [];
+      lastCapturedAtRef.current = 0;
 
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);

@@ -26,6 +26,7 @@ function Login() {
   const [faceVerificationRequired, setFaceVerificationRequired] = useState(false);
   const [faceVerificationStatus, setFaceVerificationStatus] = useState("Face verification required before login completes.");
   const [capturedFaceDescriptor, setCapturedFaceDescriptor] = useState(null);
+  const [livenessEvidence, setLivenessEvidence] = useState(null);
   const [isVerifyingFace, setIsVerifyingFace] = useState(false);
   const [faceCaptureKey, setFaceCaptureKey] = useState(0);
 
@@ -143,7 +144,7 @@ function Login() {
   };
 
   const handleFaceVerificationSuccess = async (descriptor) => {
-    if (!verificationToken || !Array.isArray(descriptor)) {
+    if (!verificationToken || !Array.isArray(descriptor) || !Array.isArray(livenessEvidence)) {
       toast.error("Face verification is required before login can continue.");
       return;
     }
@@ -168,6 +169,7 @@ function Login() {
           body: JSON.stringify({
             verificationToken,
             faceEmbedding: descriptor,
+            livenessEvidence,
           }),
         }
       );
@@ -555,7 +557,10 @@ function Login() {
 
                   <FaceVerificationCapture
                     key={faceCaptureKey}
-                    onFaceCaptured={setCapturedFaceDescriptor}
+                    onFaceCaptured={(descriptor, evidence) => {
+                      setCapturedFaceDescriptor(descriptor);
+                      setLivenessEvidence(evidence);
+                    }}
                   />
 
                   <button
