@@ -54,8 +54,8 @@ def predict_frame(predictor, cropper, encoded):
 def main():
     request = json.loads(sys.stdin.read())
     frames = request.get("frames")
-    if not isinstance(frames, list) or not 6 <= len(frames) <= 12:
-        raise ValueError("Six to twelve frames are required")
+    if not isinstance(frames, list) or not 4 <= len(frames) <= 12:
+        raise ValueError("Four to twelve frames are required")
 
     predictor = AntiSpoofPredict(-1)
     cropper = CropImage()

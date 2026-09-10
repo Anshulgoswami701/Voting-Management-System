@@ -4,8 +4,8 @@ const { spawn } = require("child_process");
 const workerPath = path.join(__dirname, "..", "pad", "pad_worker.py");
 
 const runServerPad = (frames) => new Promise((resolve, reject) => {
-  if (!Array.isArray(frames) || frames.length < 6 || frames.length > 12) {
-    resolve({ passed: false, error: "Six to twelve camera frames are required." });
+  if (!Array.isArray(frames) || frames.length < 4 || frames.length > 12) {
+    resolve({ passed: false, error: "Four to twelve camera frames are required." });
     return;
   }
 

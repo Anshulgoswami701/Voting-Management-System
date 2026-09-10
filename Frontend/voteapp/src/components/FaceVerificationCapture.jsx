@@ -137,7 +137,11 @@ function FaceVerificationCapture({ onFaceCaptured = () => {}, onCaptureStateChan
   const livenessFramesRef = useRef([]);
   const lastCapturedAtRef = useRef(0);
   const frameCanvasRef = useRef(null);
-  const REQUIRED_FRAMES = 8;
+  const REQUIRED_FRAMES = 4;
+  const MAX_LIVENESS_FRAMES = 8;
+  const CAPTURE_INTERVAL_MS = 150;
+  const CAPTURE_WIDTH = 240;
+  const CAPTURE_HEIGHT = 180;
 
   const [status, setStatus] = useState(getFaceStatus("camera-loading"));
   const [faceCount, setFaceCount] = useState(0);
@@ -283,7 +287,7 @@ function FaceVerificationCapture({ onFaceCaptured = () => {}, onCaptureStateChan
                   setCaptureState("face-ready");
                   setFailureReason("");
                   setStatus(getFaceStatus("face-ready", 1));
-                } else if (!captureLockRef.current && performance.now() - lastCapturedAtRef.current >= 80) {
+                } else if (!captureLockRef.current && performance.now() - lastCapturedAtRef.current >= CAPTURE_INTERVAL_MS) {
                   const validDescriptor = descriptorCandidate.filter((value) => Number.isFinite(value));
 
                   if (!isValidDescriptor(validDescriptor)) {
@@ -298,14 +302,17 @@ function FaceVerificationCapture({ onFaceCaptured = () => {}, onCaptureStateChan
                     capturedFramesRef.current.shift();
                   }
                   if (!frameCanvasRef.current) frameCanvasRef.current = document.createElement("canvas");
-                  frameCanvasRef.current.width = 320;
-                  frameCanvasRef.current.height = 240;
-                  frameCanvasRef.current.getContext("2d").drawImage(video, 0, 0, 320, 240);
+                  frameCanvasRef.current.width = CAPTURE_WIDTH;
+                  frameCanvasRef.current.height = CAPTURE_HEIGHT;
+                  const ctx = frameCanvasRef.current.getContext("2d");
+                  if (ctx) {
+                    ctx.drawImage(video, 0, 0, CAPTURE_WIDTH, CAPTURE_HEIGHT);
+                  }
                   livenessFramesRef.current.push({
                     ...getLivenessFrame(face, Date.now()),
-                    image: frameCanvasRef.current.toDataURL("image/jpeg", 0.6),
+                    image: frameCanvasRef.current.toDataURL("image/jpeg", 0.5),
                   });
-                  if (livenessFramesRef.current.length > 12) {
+                  if (livenessFramesRef.current.length > MAX_LIVENESS_FRAMES) {
                     livenessFramesRef.current.shift();
                   }
                   lastCapturedAtRef.current = performance.now();
@@ -317,7 +324,6 @@ function FaceVerificationCapture({ onFaceCaptured = () => {}, onCaptureStateChan
                     setFailureReason("");
                     setStatus(getFaceStatus("capturing", 1));
                   } else {
-                    // All required frames collected - average them
                     captureLockRef.current = true;
                     setCaptureState("capturing");
                     setFailureReason("");
@@ -343,7 +349,7 @@ function FaceVerificationCapture({ onFaceCaptured = () => {}, onCaptureStateChan
                         setStatus(getFaceStatus("descriptor-generated", 1));
                         onFaceCapturedRef.current(averagedDescriptor, livenessFramesRef.current.slice());
                       }
-                    }, 150);
+                    }, 100);
                   }
                 }
               }

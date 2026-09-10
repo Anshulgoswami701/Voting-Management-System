@@ -62,7 +62,7 @@ const computeEuclideanDistance = (left, right) => {
 };
 
 const validateLivenessEvidence = (evidence) => {
-  if (!Array.isArray(evidence) || evidence.length < 6 || evidence.length > 20) {
+  if (!Array.isArray(evidence) || evidence.length < 4 || evidence.length > 12) {
     return { passed: false, reason: "A complete multi-frame liveness sequence is required." };
   }
 
@@ -94,7 +94,7 @@ const validateLivenessEvidence = (evidence) => {
     frames.map((frame) => frame.landmarks[point][coordinate]),
   ))));
 
-  const passed = duration >= 400
+  const passed = duration >= 250
     && averageReal >= 0.5
     && averageLive >= 0.5
     && (boxVariation >= 0.001 || landmarkVariation >= 0.001);
