@@ -55,8 +55,15 @@ class AntiSpoofPredict(Detection):
         super(AntiSpoofPredict, self).__init__()
         self.device = torch.device("cuda:{}".format(device_id)
                                    if torch.cuda.is_available() else "cpu")
+        self._model_cache = {}
 
     def _load_model(self, model_path):
+        if model_path in self._model_cache:
+            cached_model, kernel_size = self._model_cache[model_path]
+            self.model = cached_model
+            self.kernel_size = kernel_size
+            return None
+
         # define model
         model_name = os.path.basename(model_path)
         h_input, w_input, model_type, _ = parse_model_name(model_name)
@@ -76,6 +83,8 @@ class AntiSpoofPredict(Detection):
             self.model.load_state_dict(new_state_dict)
         else:
             self.model.load_state_dict(state_dict)
+        self.model.eval()
+        self._model_cache[model_path] = (self.model, self.kernel_size)
         return None
 
     def predict(self, img, model_path):
@@ -90,7 +99,6 @@ class AntiSpoofPredict(Detection):
             result = self.model.forward(img)
             result = F.softmax(result).cpu().numpy()
         return result
-
 
 
 

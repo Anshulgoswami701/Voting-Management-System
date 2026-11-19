@@ -52,24 +52,40 @@ def predict_frame(predictor, cropper, encoded):
 
 
 def main():
-    request = json.loads(sys.stdin.read())
-    frames = request.get("frames")
-    if not isinstance(frames, list) or not 4 <= len(frames) <= 12:
-        raise ValueError("Four to twelve frames are required")
-
     predictor = AntiSpoofPredict(-1)
     cropper = CropImage()
-    results = [predict_frame(predictor, cropper, frame) for frame in frames]
-    scores = [result["score"] for result in results]
-    real_count = sum(1 for result in results if result["real"])
-    passed = real_count == len(results) and float(np.mean(scores)) >= PAD_THRESHOLD
-    print(json.dumps({
-        "passed": passed,
-        "frameCount": len(results),
-        "realFrameCount": real_count,
-        "averageScore": float(np.mean(scores)),
-        "threshold": PAD_THRESHOLD,
-    }))
+    for model_path in MODEL_PATHS:
+        height, width, _, scale = parse_model_name(os.path.basename(model_path))
+        predictor._load_model(model_path)
+
+    print(json.dumps({"ready": True}), flush=True)
+
+    for line in sys.stdin:
+        if not line.strip():
+            continue
+        request = None
+        try:
+            request = json.loads(line)
+            request_id = request.get("id")
+            frames = request.get("frames")
+            if not isinstance(frames, list) or not 4 <= len(frames) <= 12:
+                raise ValueError("Four to twelve frames are required")
+
+            results = [predict_frame(predictor, cropper, frame) for frame in frames]
+            scores = [result["score"] for result in results]
+            real_count = sum(1 for result in results if result["real"])
+            passed = real_count == len(results) and float(np.mean(scores)) >= PAD_THRESHOLD
+            response = {
+                "id": request_id,
+                "passed": passed,
+                "frameCount": len(results),
+                "realFrameCount": real_count,
+                "averageScore": float(np.mean(scores)),
+                "threshold": PAD_THRESHOLD,
+            }
+        except Exception as error:
+            response = {"id": request.get("id") if "request" in locals() else None, "passed": False, "error": str(error)}
+        print(json.dumps(response), flush=True)
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ function VoterHistory() {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:5000/api/votes/history", {
+        const response = await fetch("/api/votes/history", {
           headers: { Authorization: `Bearer ${token}` },
         });
 

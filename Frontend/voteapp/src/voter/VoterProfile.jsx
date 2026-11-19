@@ -15,7 +15,7 @@ function VoterProfile() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:5000/api/voters/me", {
+      const response = await fetch("/api/voters/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -47,7 +47,7 @@ function VoterProfile() {
       setSaving(true);
       setMessage("");
 
-      const response = await fetch("http://localhost:5000/api/voters/me", {
+      const response = await fetch("/api/voters/me", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -17,7 +17,7 @@ function VoterElectionDetails() {
   const fetchElection = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/elections/voter/${id}`, {
+      const response = await fetch(`/api/elections/voter/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -37,7 +37,7 @@ function VoterElectionDetails() {
 
   const fetchVoteStatus = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/votes/election/${id}/status`, {
+      const response = await fetch(`/api/votes/election/${id}/status`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -65,7 +65,7 @@ function VoterElectionDetails() {
 
     try {
       setSubmitting(true);
-      const response = await fetch("http://localhost:5000/api/votes", {
+      const response = await fetch("/api/votes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

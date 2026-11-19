@@ -2,6 +2,7 @@ const Election = require("../models/election");
 const Candidate = require("../models/candidate");
 const User = require("../models/User");
 const Vote = require("../models/vote");
+const { isVoterEligibleForElection } = require("../services/electionEligibility");
 
 // ==========================================
 // UPDATE ELECTION STATUSES
@@ -85,6 +86,8 @@ const createElection = async (req, res) => {
       description,
       startDate,
       endDate,
+      eligibility,
+      eligibleVoters,
     } = req.body;
 
     if (
@@ -108,6 +111,20 @@ const createElection = async (req, res) => {
       return res.status(400).json({
         message: "Invalid date format",
       });
+    }
+
+    if (eligibility && !["all_verified", "selected_voters"].includes(eligibility)) {
+      return res.status(400).json({ message: "Invalid election eligibility." });
+    }
+
+    let normalizedEligibleVoters = [];
+    if (eligibility === "selected_voters") {
+      if (!Array.isArray(eligibleVoters) || eligibleVoters.length === 0) {
+        return res.status(400).json({
+          message: "Selected voters are required for this election.",
+        });
+      }
+      normalizedEligibleVoters = [...new Set(eligibleVoters.map(String))];
     }
 
     const today = new Date();
@@ -137,6 +154,8 @@ const createElection = async (req, res) => {
       startDate: start,
       endDate: end,
       status: "upcoming",
+      eligibility: eligibility || "all_verified",
+      eligibleVoters: normalizedEligibleVoters,
       createdBy: req.user.userId,
     });
 
@@ -246,6 +265,8 @@ const updateElection = async (req, res) => {
       description,
       startDate,
       endDate,
+      eligibility,
+      eligibleVoters,
     } = req.body;
 
     const election =
@@ -302,6 +323,21 @@ const updateElection = async (req, res) => {
       });
     }
 
+    if (eligibility && !["all_verified", "selected_voters"].includes(eligibility)) {
+      return res.status(400).json({ message: "Invalid election eligibility." });
+    }
+
+    if (eligibility === "selected_voters") {
+      if (!Array.isArray(eligibleVoters) || eligibleVoters.length === 0) {
+        return res.status(400).json({
+          message: "Selected voters are required for this election.",
+        });
+      }
+      election.eligibleVoters = [...new Set(eligibleVoters.map(String))];
+    } else if (eligibility === "all_verified") {
+      election.eligibleVoters = [];
+    }
+
     election.title = title.trim();
 
     election.description =
@@ -309,6 +345,7 @@ const updateElection = async (req, res) => {
 
     election.startDate = start;
     election.endDate = end;
+    if (eligibility) election.eligibility = eligibility;
 
     const now = new Date();
 
@@ -397,18 +434,27 @@ const getActiveElectionsForVoter = async (
   try {
     await updateElectionStatuses();
 
+    const voter = await User.findById(req.user.userId);
+    if (!voter) {
+      return res.status(404).json({ message: "Voter account not found." });
+    }
+
     const elections = await Election.find({
       status: "active",
     })
       .select(
-        "title description startDate endDate status"
+        "title description startDate endDate status eligibility eligibleVoters"
       )
       .sort({ startDate: 1 });
+
+    const eligibleElections = elections.filter((election) =>
+      isVoterEligibleForElection(election, voter)
+    );
 
     return res.status(200).json({
       message:
         "Active elections fetched successfully",
-      elections,
+      elections: eligibleElections,
     });
   } catch (error) {
     console.error(
@@ -436,15 +482,25 @@ const getVoterElectionById = async (
     await updateElectionStatuses();
 
     const { id } = req.params;
+    const voter = await User.findById(req.user.userId);
+    if (!voter) {
+      return res.status(404).json({ message: "Voter account not found." });
+    }
 
     const election =
       await Election.findById(id).select(
-        "title description startDate endDate status resultsPublished"
+        "title description startDate endDate status resultsPublished eligibility eligibleVoters"
       );
 
     if (!election) {
       return res.status(404).json({
         message: "Election not found",
+      });
+    }
+
+    if (!isVoterEligibleForElection(election, voter)) {
+      return res.status(403).json({
+        message: "You are not eligible to participate in this election.",
       });
     }
 
@@ -492,6 +548,7 @@ const getVoterElections = async (req, res) => {
 
     const enriched = elections.map((election) => {
       const hasVoted = votedElectionIds.some((id) => id.toString() === election._id.toString());
+      const eligible = isVoterEligibleForElection(election, voter);
       const now = new Date();
       let votingStatus = "not_started";
 
@@ -504,6 +561,7 @@ const getVoterElections = async (req, res) => {
         ...election,
         votingStatus,
         hasVoted,
+        eligible,
       };
     });
 

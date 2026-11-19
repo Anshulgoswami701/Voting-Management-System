@@ -1,5 +1,6 @@
 const assert = require("assert");
 const bcrypt = require("bcryptjs");
+const { stopWorker } = require("./services/padService");
 
 process.env.FACE_MATCH_THRESHOLD = "0.7";
 const userModelPath = require.resolve("./models/User");
@@ -69,8 +70,10 @@ console.log("Liveness sequence ordering: rejected; descriptor generated: yes; an
   assert.strictEqual(responseBody.requiresFaceVerification, undefined);
   console.log("F wrong password: HTTP 401; descriptor generated: no; anti-spoof: not run; face distance: n/a; threshold: n/a; JWT: not issued; dashboard: denied");
   console.log("Phase 2 backend decision tests passed. Physical phone, print, and monitor tests require actual camera fixtures.");
+  stopWorker();
 })().catch((error) => {
   require.cache[userModelPath].exports = originalUserModel;
+  stopWorker();
   console.error(error);
   process.exitCode = 1;
 });

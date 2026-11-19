@@ -182,12 +182,12 @@ function Register() {
     }
 
     try {
-      const challengeResponse = await fetch("http://localhost:5000/api/auth/pad-challenge", {
+      const challengeResponse = await fetch("/api/auth/pad-challenge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
       const challengeData = await challengeResponse.json();
-      const padResponse = await fetch("http://localhost:5000/api/auth/verify-pad", {
+      const padResponse = await fetch("/api/auth/verify-pad", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ challengeToken: challengeData.challengeToken, frames: livenessEvidence }),
@@ -202,11 +202,12 @@ function Register() {
       }
 
       registerData.padToken = challengeData.challengeToken;
+      registerData.livenessEvidence = livenessEvidence;
       // ==========================
       // API REQUEST
       // ==========================
       const response = await fetch(
-        "http://localhost:5000/api/auth/register",
+        "/api/auth/register",
         {
           method: "POST",
 

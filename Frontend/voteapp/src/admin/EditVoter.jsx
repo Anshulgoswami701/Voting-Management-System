@@ -22,7 +22,7 @@ function EditVoter() {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-          `http://localhost:5000/api/voters/${id}`,
+          `/api/voters/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -72,7 +72,7 @@ function EditVoter() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5000/api/voters/${id}`,
+        `/api/voters/${id}`,
         {
           method: "PUT",
           headers: {

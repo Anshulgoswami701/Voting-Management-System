@@ -50,7 +50,7 @@ function Voter() {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/voters",
+        "/api/voters",
         {
           method: "GET",
           headers: {
@@ -141,7 +141,7 @@ function Voter() {
           : "active";
 
       const response = await fetch(
-        `http://localhost:5000/api/voters/${selectedVoter._id}/status`,
+        `/api/voters/${selectedVoter._id}/status`,
         {
           method: "PATCH",
           headers: {
@@ -188,7 +188,7 @@ function Voter() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5000/api/voters/${selectedVoter._id}`,
+        `/api/voters/${selectedVoter._id}`,
         {
           method: "DELETE",
           headers: {

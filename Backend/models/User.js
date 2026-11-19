@@ -99,9 +99,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.index({ voterId: 1 }, { unique: true, sparse: true });
-userSchema.index({ email: 1 }, { unique: true });
-
 userSchema.pre("save", async function () {
   if (this.role === "admin") {
     this.verificationStatus = "verified";

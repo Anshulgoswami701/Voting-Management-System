@@ -23,6 +23,16 @@ const isValidFaceEmbedding = (value) =>
   value.length <= 2048 &&
   value.every((entry) => Number.isFinite(entry));
 
+const getFrameSequenceHash = (frames) => {
+  if (!Array.isArray(frames) || frames.length < 4) return null;
+  const images = frames.map((frame) => {
+    if (typeof frame === "string") return frame;
+    return frame?.image;
+  });
+  if (images.some((image) => typeof image !== "string" || image.length === 0)) return null;
+  return crypto.createHash("sha256").update(JSON.stringify(images)).digest("hex");
+};
+
 const normalizeEmbedding = (embedding) => {
   if (!isValidFaceEmbedding(embedding)) return null;
 
@@ -42,8 +52,8 @@ const normalizeEmbedding = (embedding) => {
 };
 
 const getFaceMatchThreshold = () => {
-  const configured = Number.parseFloat(process.env.FACE_MATCH_THRESHOLD || "0.7");
-  return Number.isFinite(configured) ? configured : 0.7;
+  const configured = Number.parseFloat(process.env.FACE_MATCH_THRESHOLD || "0.55");
+  return Number.isFinite(configured) ? Math.min(0.8, Math.max(0.35, configured)) : 0.55;
 };
 
 const computeEuclideanDistance = (left, right) => {
@@ -148,10 +158,10 @@ const sendResetEmail = async (user, token) => {
       name: user.fullName,
       resetUrl,
     });
-    return { ok: true, resetUrl };
+    return { ok: true };
   } catch (error) {
     console.error("Password reset email send failed:", error.message || error);
-    return { ok: false, resetUrl };
+    return { ok: false };
   }
 };
 
@@ -172,6 +182,10 @@ const verifyPad = async (req, res) => {
     }
 
     const frameImages = Array.isArray(frames) ? frames.map((frame) => frame?.image) : [];
+    const frameSequenceHash = getFrameSequenceHash(frames);
+    if (!frameSequenceHash) {
+      return res.status(400).json({ message: "A valid camera frame sequence is required." });
+    }
     const result = await runServerPad(frameImages);
     if (!result.passed) {
       padStates.delete(decoded.jti);
@@ -180,6 +194,7 @@ const verifyPad = async (req, res) => {
 
     state.passed = true;
     state.passedAt = Date.now();
+    state.frameSequenceHash = frameSequenceHash;
     return res.status(200).json({ message: "Server-side anti-spoof verification passed.", antiSpoofPassed: true });
   } catch (error) {
     return res.status(401).json({ message: "PAD challenge is invalid or expired." });
@@ -198,6 +213,7 @@ const register = async (req, res) => {
       role,
       termsAccepted,
       faceEmbedding,
+      livenessEvidence,
       padToken,
     } = req.body;
 
@@ -245,6 +261,18 @@ const register = async (req, res) => {
       });
     }
 
+    const registrationLiveness = validateLivenessEvidence(livenessEvidence);
+    if (!registrationLiveness.passed) {
+      return res.status(403).json({
+        message: registrationLiveness.reason,
+      });
+    }
+
+    const registrationFrameHash = getFrameSequenceHash(livenessEvidence);
+    if (!registrationFrameHash) {
+      return res.status(400).json({ message: "A valid registration camera sequence is required." });
+    }
+
     let decodedPadToken;
     try {
       decodedPadToken = jwt.verify(padToken, process.env.JWT_SECRET);
@@ -252,7 +280,8 @@ const register = async (req, res) => {
       return res.status(403).json({ message: "Server-side anti-spoof verification is required." });
     }
     const padState = padStates.get(decodedPadToken.jti);
-    if (!padState || !padState.passed || padState.type !== "registration-pad" || padState.expiresAt < Date.now()) {
+    if (!padState || !padState.passed || padState.type !== "registration-pad" || padState.expiresAt < Date.now()
+      || padState.frameSequenceHash !== registrationFrameHash) {
       return res.status(403).json({ message: "Server-side anti-spoof verification is required." });
     }
     padStates.delete(decodedPadToken.jti);
@@ -261,6 +290,23 @@ const register = async (req, res) => {
     if (!normalizedFaceEmbedding) {
       return res.status(400).json({
         message: "Face verification processing failed. Please try again.",
+      });
+    }
+
+    const existingFaceProfiles = await User.find({
+      faceEmbedding: { $ne: null },
+    }).select("+faceEmbedding");
+
+    const duplicateFace = existingFaceProfiles.find((existingUser) => {
+      const storedEmbedding = normalizeEmbedding(existingUser.faceEmbedding);
+      if (!storedEmbedding) return false;
+      const distance = computeEuclideanDistance(normalizedFaceEmbedding, storedEmbedding);
+      return Number.isFinite(distance) && distance <= getFaceMatchThreshold();
+    });
+
+    if (duplicateFace) {
+      return res.status(409).json({
+        message: "This face is already registered to another account.",
       });
     }
 
@@ -314,6 +360,8 @@ const register = async (req, res) => {
       password: hashedPassword,
       role,
       status: "active",
+      accountStatus: "active",
+      verificationStatus: role === "voter" ? "verified" : "verified",
       termsAccepted: true,
       acceptedAt: new Date(),
       faceEmbedding: normalizedFaceEmbedding,
@@ -403,6 +451,8 @@ const login = async (req, res) => {
     const verificationJti = crypto.randomUUID();
     padStates.set(verificationJti, {
       type: "face-verification",
+      userId: String(user._id),
+      role: user.role,
       passed: false,
       expiresAt: Date.now() + Number(process.env.FACE_VERIFICATION_TTL_SECONDS || 120) * 1000,
     });
@@ -434,7 +484,7 @@ const login = async (req, res) => {
 
 const verifyFaceLogin = async (req, res) => {
   try {
-    const { verificationToken, faceEmbedding } = req.body;
+    const { verificationToken, faceEmbedding, livenessEvidence } = req.body;
 
     if (!verificationToken) {
       return res.status(401).json({
@@ -446,6 +496,18 @@ const verifyFaceLogin = async (req, res) => {
       return res.status(400).json({
         message: "A valid face descriptor is required for verification.",
       });
+    }
+
+    const loginLiveness = validateLivenessEvidence(livenessEvidence);
+    if (!loginLiveness.passed) {
+      return res.status(403).json({
+        message: loginLiveness.reason,
+      });
+    }
+
+    const loginFrameHash = getFrameSequenceHash(livenessEvidence);
+    if (!loginFrameHash) {
+      return res.status(400).json({ message: "A valid camera frame sequence is required." });
     }
 
     let decodedToken;
@@ -465,7 +527,10 @@ const verifyFaceLogin = async (req, res) => {
     }
 
     const padState = padStates.get(decodedToken.jti);
-    if (!padState || !padState.passed || padState.expiresAt < Date.now()) {
+    if (!padState || !padState.passed || padState.expiresAt < Date.now()
+      || padState.userId !== String(decodedToken.userId)
+      || padState.role !== decodedToken.role
+      || padState.frameSequenceHash !== loginFrameHash) {
       return res.status(403).json({ message: "Server-side anti-spoof verification is required.", antiSpoofPassed: false });
     }
     padStates.delete(decodedToken.jti);
@@ -475,6 +540,12 @@ const verifyFaceLogin = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         message: "Face verification session is invalid.",
+      });
+    }
+
+    if (String(user._id) !== String(decodedToken.userId)) {
+      return res.status(403).json({
+        message: "This face verification session does not belong to this account.",
       });
     }
 
@@ -510,8 +581,9 @@ const verifyFaceLogin = async (req, res) => {
     const evaluation = evaluateFaceVerification({
       storedEmbedding: user.faceEmbedding,
       faceEmbedding,
+      livenessEvidence,
     });
-    const { distance, threshold, comparisonPassed } = evaluation;
+    const { distance, threshold, comparisonPassed, passed } = evaluation;
 
     if (process.env.FACE_VERIFICATION_DEBUG === "true") {
       console.log("Face verification attempt:", {
@@ -521,11 +593,11 @@ const verifyFaceLogin = async (req, res) => {
         distance: Number.isFinite(distance) ? Number(distance.toFixed(6)) : null,
         threshold: Number(threshold.toFixed(2)),
         antiSpoofPassed: true,
-        result: comparisonPassed ? "ACCEPTED" : "REJECTED",
+        result: passed ? "ACCEPTED" : "REJECTED",
       });
     }
 
-    if (!comparisonPassed) {
+    if (!passed || !comparisonPassed) {
       return res.status(403).json({
         message: "Face verification failed. Please try again with a matching face.",
       });
@@ -585,7 +657,6 @@ const forgotPassword = async (req, res) => {
 
     return res.status(200).json({
       message: "If an account with that email exists, a reset link has been sent.",
-      resetUrl: emailSendResult.resetUrl,
     });
   } catch (error) {
     console.error("Forgot password error:", error);

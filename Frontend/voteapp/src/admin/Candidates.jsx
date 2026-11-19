@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -43,7 +43,7 @@ const Candidates = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/candidates", {
+      const response = await fetch("/api/candidates", {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -63,7 +63,7 @@ const Candidates = () => {
   const fetchElections = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/elections", {
+      const response = await fetch("/api/elections", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -91,7 +91,7 @@ const Candidates = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/candidates", {
+      const response = await fetch("/api/candidates", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -150,7 +150,7 @@ const Candidates = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/api/candidates/${editData.id}`, {
+      const response = await fetch(`/api/candidates/${editData.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -185,7 +185,7 @@ const Candidates = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/api/candidates/${id}`, {
+      const response = await fetch(`/api/candidates/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -214,7 +214,7 @@ const Candidates = () => {
             onClick={() => navigate("/admin/dashboard")}
             className="mb-5 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-all duration-200 bg-white hover:text-indigo-600 hover:shadow-sm"
           >
-            <span className="text-lg leading-none">←</span>
+            <span className="text-lg leading-none">?</span>
             <span>Back</span>
           </button>
           <h1 className="text-3xl font-bold text-slate-900">Candidate Management</h1>
@@ -250,7 +250,7 @@ const Candidates = () => {
           <div className="py-16 text-center text-slate-500">Loading candidates...</div>
         ) : filteredCandidates.length === 0 ? (
           <div className="py-16 text-center">
-            <div className="text-5xl mb-4">👤</div>
+            <div className="text-5xl mb-4">??</div>
             <h3 className="text-lg font-semibold text-slate-700">No candidates found</h3>
             <p className="text-slate-400 mt-1">Add a candidate to get started.</p>
           </div>
@@ -285,9 +285,9 @@ const Candidates = () => {
                     <td className="px-6 py-5 text-slate-600">{candidate.candidateId || "-"}</td>
                     <td className="px-6 py-5">
                       <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => handleView(candidate)} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="View">👁</button>
-                        <button type="button" onClick={() => handleEdit(candidate)} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit">✏️</button>
-                        <button type="button" onClick={() => handleDelete(candidate._id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">🗑</button>
+                        <button type="button" onClick={() => handleView(candidate)} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="View">??</button>
+                        <button type="button" onClick={() => handleEdit(candidate)} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit">??</button>
+                        <button type="button" onClick={() => handleDelete(candidate._id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">??</button>
                       </div>
                     </td>
                   </tr>
@@ -306,7 +306,7 @@ const Candidates = () => {
                 <h2 className="text-xl font-bold text-slate-900">Add Candidate</h2>
                 <p className="text-sm text-slate-500 mt-1">Add a candidate to an election.</p>
               </div>
-              <button type="button" onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
+              <button type="button" onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-700 text-xl">?</button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -344,7 +344,7 @@ const Candidates = () => {
                 <h2 className="text-xl font-bold text-slate-900">Edit Candidate</h2>
                 <p className="text-sm text-slate-500 mt-1">Update candidate information.</p>
               </div>
-              <button type="button" onClick={() => setShowEdit(false)} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
+              <button type="button" onClick={() => setShowEdit(false)} className="text-slate-400 hover:text-slate-700 text-xl">?</button>
             </div>
 
             <form onSubmit={handleUpdate} className="p-6 space-y-4">
@@ -379,7 +379,7 @@ const Candidates = () => {
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl">
             <div className="flex items-center justify-between px-6 py-5 border-b">
               <h2 className="text-xl font-bold text-slate-900">Candidate Details</h2>
-              <button type="button" onClick={() => setShowView(false)} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
+              <button type="button" onClick={() => setShowView(false)} className="text-slate-400 hover:text-slate-700 text-xl">?</button>
             </div>
 
             <div className="p-6 space-y-4">

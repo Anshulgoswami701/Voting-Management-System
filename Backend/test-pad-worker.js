@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { runServerPad } = require("./services/padService");
+const { runServerPad, stopWorker } = require("./services/padService");
 
 const toDataUrl = (filePath) => {
   const image = fs.readFileSync(filePath).toString("base64");
@@ -20,6 +20,7 @@ const run = async () => {
 
   if (!realSample || !spoofSample) {
     console.log("PAD fixture test skipped: set PAD_REAL_SAMPLE and PAD_SPOOF_SAMPLE to camera-captured fixtures.");
+    stopWorker();
     return;
   }
 
@@ -35,9 +36,11 @@ const run = async () => {
   }
 
   console.log("forged client PAD scores: ignored; decision came from server-side frame inference");
+  stopWorker();
 };
 
 run().catch((error) => {
+  stopWorker();
   console.error(error.message);
   process.exitCode = 1;
 });

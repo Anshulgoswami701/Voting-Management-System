@@ -64,7 +64,7 @@ function Elections() {
   // ==========================================
 
   const API_URL =
-    "http://localhost:5000/api/elections";
+    "/api/elections";
 
   // ==========================================
   // GET ELECTIONS

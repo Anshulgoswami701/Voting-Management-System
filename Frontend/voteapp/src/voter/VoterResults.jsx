@@ -19,7 +19,7 @@ function VoterResults() {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          `http://localhost:5000/api/elections/voter/${electionId}`,
+          `/api/elections/voter/${electionId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -52,7 +52,7 @@ function VoterResults() {
         setLoading(true);
         const token = localStorage.getItem("token");
         const response = await fetch(
-          `http://localhost:5000/api/results/${electionId}`,
+          `/api/results/${electionId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

@@ -40,7 +40,7 @@ function VoterDashboard() {
           return;
         }
 
-        const response = await fetch("http://localhost:5000/api/voters/me", {
+        const response = await fetch("/api/voters/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -69,7 +69,7 @@ function VoterDashboard() {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await fetch("http://localhost:5000/api/elections/voter/list", {
+        const response = await fetch("/api/elections/voter/list", {
           headers: { Authorization: `Bearer ${token}` },
         });
 

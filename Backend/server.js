@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const rateLimit = require("express-rate-limit");
 
 const connectDB = require("./config/db");
 const electionRoutes = require("./routes/electionRoutes");
@@ -24,10 +25,33 @@ setInterval(async () => {
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Origin is not allowed by CORS"));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: "12mb" }));
 
-app.use("/api/auth", require("./routes/authRoutes"));
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { message: "Too many authentication requests. Please try again later." },
+});
+
+app.use("/api/auth", authLimiter, require("./routes/authRoutes"));
 app.use("/api/admin", adminRoutes);
 app.use("/api/elections", electionRoutes);
 app.use("/api/candidates", candidateRoutes);

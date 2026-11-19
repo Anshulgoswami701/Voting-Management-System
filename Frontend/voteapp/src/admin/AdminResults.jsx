@@ -19,7 +19,7 @@ function AdminResults() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/elections", {
+      const response = await fetch("/api/elections", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -46,7 +46,7 @@ function AdminResults() {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/results/${electionId}`,
+        `/api/results/${electionId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -72,7 +72,7 @@ function AdminResults() {
       setPublishing(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/results/${electionId}/publish`,
+        `/api/results/${electionId}/publish`,
         {
           method: "PATCH",
           headers: { Authorization: `Bearer ${token}` },

@@ -27,6 +27,8 @@ async function seedDatabase() {
       password: await bcrypt.hash('Pass123', 10),
       role: 'voter',
       status: 'active',
+      verificationStatus: 'verified',
+      accountStatus: 'active',
     });
 
     const v2 = await User.create({
@@ -36,6 +38,8 @@ async function seedDatabase() {
       password: await bcrypt.hash('Pass123', 10),
       role: 'voter',
       status: 'active',
+      verificationStatus: 'verified',
+      accountStatus: 'active',
     });
 
     const v3 = await User.create({
@@ -45,6 +49,8 @@ async function seedDatabase() {
       password: await bcrypt.hash('Pass123', 10),
       role: 'voter',
       status: 'active',
+      verificationStatus: 'verified',
+      accountStatus: 'active',
     });
 
     console.log('✓ Voters created');

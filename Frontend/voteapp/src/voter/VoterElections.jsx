@@ -14,7 +14,7 @@ function VoterElections() {
   const fetchElections = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:5000/api/elections/voter/list", {
+      const response = await fetch("/api/elections/voter/list", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();

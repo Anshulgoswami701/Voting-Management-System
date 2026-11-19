@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import * as HumanLib from "@vladmandic/human";
 
 const humanConfig = {
   backend: "webgl",
@@ -139,7 +138,7 @@ function FaceVerificationCapture({ onFaceCaptured = () => {}, onCaptureStateChan
   const frameCanvasRef = useRef(null);
   const REQUIRED_FRAMES = 4;
   const MAX_LIVENESS_FRAMES = 8;
-  const CAPTURE_INTERVAL_MS = 150;
+  const CAPTURE_INTERVAL_MS = 90;
   const CAPTURE_WIDTH = 240;
   const CAPTURE_HEIGHT = 180;
 
@@ -176,7 +175,8 @@ function FaceVerificationCapture({ onFaceCaptured = () => {}, onCaptureStateChan
       }
 
       try {
-        const human = new HumanLib.Human(humanConfig);
+        const { Human } = await import("@vladmandic/human");
+        const human = new Human(humanConfig);
         humanRef.current = human;
 
         human.draw.options.drawBoxes = true;

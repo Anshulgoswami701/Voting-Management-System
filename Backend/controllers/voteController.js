@@ -2,6 +2,7 @@ const Vote = require("../models/vote");
 const User = require("../models/User");
 const Election = require("../models/election");
 const Candidate = require("../models/candidate");
+const { isVoterEligibleForElection } = require("../services/electionEligibility");
 
 // ==========================================
 // GET ACTIVE ELECTIONS FOR VOTER
@@ -10,6 +11,10 @@ const Candidate = require("../models/candidate");
 const getActiveElections = async (req, res) => {
   try {
     const now = new Date();
+    const voter = await User.findById(req.user.userId);
+    if (!voter) {
+      return res.status(404).json({ message: "Voter account not found." });
+    }
 
     const elections = await Election.find({
       startDate: { $lte: now },
@@ -19,9 +24,13 @@ const getActiveElections = async (req, res) => {
       startDate: 1,
     });
 
+    const eligibleElections = elections.filter((election) =>
+      isVoterEligibleForElection(election, voter)
+    );
+
     return res.status(200).json({
       message: "Active elections fetched successfully",
-      elections,
+      elections: eligibleElections,
     });
   } catch (error) {
     console.error(
@@ -99,6 +108,12 @@ const getCandidatesForVoter = async (req, res) => {
       return res.status(403).json({
         message:
           "Your voter account has been blocked by admin",
+      });
+    }
+
+    if (!isVoterEligibleForElection(election, voter)) {
+      return res.status(403).json({
+        message: "You are not eligible to participate in this election.",
       });
     }
 
@@ -216,6 +231,12 @@ const submitVote = async (req, res) => {
       });
     }
 
+    if (!isVoterEligibleForElection(election, voter)) {
+      return res.status(403).json({
+        message: "You are not eligible to participate in this election.",
+      });
+    }
+
     // ==========================================
     // CHECK ELECTION ACTIVE
     // ==========================================
@@ -287,14 +308,6 @@ const submitVote = async (req, res) => {
       election: electionId,
       candidate: candidateId,
     });
-
-    // ==========================================
-    // UPDATE USER
-    // ==========================================
-
-    voter.hasVoted = true;
-
-    await voter.save();
 
     // ==========================================
     // RESPONSE

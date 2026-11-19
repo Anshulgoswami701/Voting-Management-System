@@ -71,7 +71,7 @@ function Login() {
       // API REQUEST
       // ==========================
       const response = await fetch(
-        "http://localhost:5000/api/auth/login",
+        "/api/auth/login",
         {
           method: "POST",
 
@@ -164,7 +164,7 @@ function Login() {
     setFaceVerificationStatus("Verifying your face... Please wait.");
 
     try {
-      const padResponse = await fetch("http://localhost:5000/api/auth/verify-pad", {
+      const padResponse = await fetch("/api/auth/verify-pad", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ challengeToken: verificationToken, frames: livenessEvidence }),
@@ -184,7 +184,7 @@ function Login() {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/verify-face",
+        "/api/auth/verify-face",
         {
           method: "POST",
           headers: {
@@ -193,6 +193,7 @@ function Login() {
           body: JSON.stringify({
             verificationToken,
             faceEmbedding: descriptor,
+            livenessEvidence,
           }),
         }
       );

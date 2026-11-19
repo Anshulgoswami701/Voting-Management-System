@@ -27,7 +27,7 @@ function ElectionDetails() {
   // API URL
   // ==========================================
 
-  const API_URL = `http://localhost:5000/api/elections/${id}`;
+  const API_URL = `/api/elections/${id}`;
 
   // ==========================================
   // FETCH ELECTION
